@@ -123,12 +123,17 @@ export class TreeSitterParsingService {
 
       return chunks;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(
         'Failed to parse file',
         error as Error,
         { filePath, language }
       );
-      throw error;
+      
+      // Provide more context in the error message
+      throw new Error(
+        `Failed to parse ${language} file '${filePath}': ${errorMessage}`
+      );
     }
   }
 

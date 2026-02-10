@@ -18,7 +18,7 @@ import { loadConfig } from '../shared/config/config.js';
 import { createLogger } from '../shared/logging/logger.js';
 import { IngestionService } from '../domains/ingestion/ingestion.service.js';
 import { createEmbeddingService } from '../domains/embedding/embedding.service.js';
-import { ChromaDBClientWrapper } from '../infrastructure/chromadb/chromadb.client.js';
+import { ChromaDBClientWrapper } from '../infrastructure/lancedb/lancedb.client.js';
 
 /**
  * Format duration in seconds

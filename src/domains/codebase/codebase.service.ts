@@ -10,7 +10,7 @@ import type {
   ChunkTypeStats,
   Config 
 } from '../../shared/types/index.js';
-import { ChromaDBClientWrapper } from '../../infrastructure/chromadb/chromadb.client.js';
+import { ChromaDBClientWrapper } from '../../infrastructure/lancedb/lancedb.client.js';
 import { createLogger } from '../../shared/logging/index.js';
 
 const rootLogger = createLogger('info');
@@ -32,11 +32,9 @@ export class CodebaseError extends Error {
  */
 export class CodebaseService {
   private chromaClient: ChromaDBClientWrapper;
-  private config: Config;
 
-  constructor(chromaClient: ChromaDBClientWrapper, config: Config) {
+  constructor(chromaClient: ChromaDBClientWrapper, _config: Config) {
     this.chromaClient = chromaClient;
-    this.config = config;
   }
 
   /**
@@ -63,6 +61,7 @@ export class CodebaseService {
         const collectionName = ChromaDBClientWrapper.getCollectionName(codebaseName);
         const col = await this.chromaClient.getClient().getCollection({
           name: collectionName,
+          embeddingFunction: this.chromaClient.getEmbeddingFunction(),
         });
 
         const count = await col.count();
@@ -108,11 +107,12 @@ export class CodebaseService {
       const collectionName = ChromaDBClientWrapper.getCollectionName(name);
       const col = await this.chromaClient.getClient().getCollection({
         name: collectionName,
+        embeddingFunction: this.chromaClient.getEmbeddingFunction(),
       });
 
       // Get all chunks to calculate statistics
       const result = await col.get({
-        include: ['metadatas'],
+        include: ['metadatas' as any],
       });
 
       const chunkCount = result.ids.length;
@@ -212,11 +212,12 @@ export class CodebaseService {
       const oldCollectionName = ChromaDBClientWrapper.getCollectionName(oldName);
       const oldCol = await this.chromaClient.getClient().getCollection({
         name: oldCollectionName,
+        embeddingFunction: this.chromaClient.getEmbeddingFunction(),
       });
 
       // Get all chunks from old collection
       const result = await oldCol.get({
-        include: ['embeddings', 'metadatas', 'documents'],
+        include: ['embeddings' as any, 'metadatas' as any, 'documents' as any],
       });
 
       if (result.ids.length === 0) {
@@ -240,6 +241,7 @@ export class CodebaseService {
       const newCollectionName = ChromaDBClientWrapper.getCollectionName(newName);
       const newCol = await this.chromaClient.getClient().getCollection({
         name: newCollectionName,
+        embeddingFunction: this.chromaClient.getEmbeddingFunction(),
       });
 
       // Copy all chunks to new collection with updated metadata
@@ -249,11 +251,14 @@ export class CodebaseService {
           codebaseName: newName,
         }));
 
+        // Filter out null documents
+        const documents = result.documents?.filter((doc): doc is string => doc !== null);
+
         await newCol.add({
           ids: result.ids,
           embeddings: result.embeddings as number[][] | undefined,
           metadatas: updatedMetadatas,
-          documents: result.documents as string[] | undefined,
+          documents: documents,
         });
       }
 
@@ -313,12 +318,13 @@ export class CodebaseService {
       const collectionName = ChromaDBClientWrapper.getCollectionName(codebaseName);
       const col = await this.chromaClient.getClient().getCollection({
         name: collectionName,
+        embeddingFunction: this.chromaClient.getEmbeddingFunction(),
       });
 
       // Get all chunks with the specified timestamp
       const result = await col.get({
         where: { ingestionTimestamp: timestamp },
-        include: ['metadatas'],
+        include: ['metadatas' as any],
       });
 
       const chunkCount = result.ids.length;

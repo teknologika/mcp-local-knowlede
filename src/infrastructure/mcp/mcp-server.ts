@@ -370,6 +370,14 @@ export class MCPServer {
     await this.server.connect(transport);
 
     logger.info('MCP server started successfully');
+
+    // Keep the process alive by returning a promise that never resolves
+    // The stdio transport will handle communication via stdin/stdout
+    // The process will exit when SIGINT/SIGTERM is received (handled in main)
+    return new Promise(() => {
+      // This promise intentionally never resolves to keep the process alive
+      // The shutdown handlers in the main entry point will handle cleanup
+    });
   }
 
   /**

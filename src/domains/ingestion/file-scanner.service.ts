@@ -8,7 +8,7 @@
  * - Tracking file statistics during scanning
  */
 
-import { promises as fs } from 'node:fs';
+import { promises as fs, type Dirent } from 'node:fs';
 import path from 'node:path';
 import ignore, { type Ignore } from 'ignore';
 import { LanguageDetectionService } from '../parsing/language-detection.service.js';
@@ -75,7 +75,7 @@ export class FileScannerService {
       maxFileSize = 1048576, // 1MB default
     } = options;
 
-    logger.info({ directoryPath, options }, 'Starting directory scan');
+    logger.info('Starting directory scan', { directoryPath, options });
 
     // Initialize statistics
     const statistics: ScanStatistics = {
@@ -106,12 +106,12 @@ export class FileScannerService {
     );
 
     logger.info(
+      'Directory scan completed',
       {
         totalFiles: statistics.totalFiles,
         supportedFiles: statistics.supportedFiles,
         unsupportedFiles: statistics.unsupportedFiles,
-      },
-      'Directory scan completed'
+      }
     );
 
     return { files, statistics };
@@ -129,15 +129,12 @@ export class FileScannerService {
     skipHiddenDirectories: boolean,
     maxFileSize: number
   ): Promise<void> {
-    let entries: fs.Dirent[];
+    let entries: Dirent[];
 
     try {
       entries = await fs.readdir(currentPath, { withFileTypes: true });
     } catch (error) {
-      logger.warn(
-        { path: currentPath, error },
-        'Failed to read directory, skipping'
-      );
+      logger.warn('Failed to read directory, skipping');
       return;
     }
 
@@ -149,7 +146,7 @@ export class FileScannerService {
       if (skipHiddenDirectories && entry.name.startsWith('.')) {
         if (entry.isDirectory()) {
           statistics.skippedHidden++;
-          logger.debug({ path: relativePath }, 'Skipping hidden directory');
+          logger.debug('Skipping hidden directory', { path: relativePath });
         }
         continue;
       }
@@ -157,7 +154,7 @@ export class FileScannerService {
       // Check gitignore filter
       if (gitignoreFilter && gitignoreFilter.ignores(relativePath)) {
         statistics.skippedByGitignore++;
-        logger.debug({ path: relativePath }, 'Skipping file (gitignore)');
+        logger.debug('Skipping file (gitignore)', { path: relativePath });
         continue;
       }
 
@@ -178,13 +175,13 @@ export class FileScannerService {
           const stats = await fs.stat(fullPath);
           if (stats.size > maxFileSize) {
             logger.debug(
-              { path: relativePath, size: stats.size, maxFileSize },
-              'Skipping file (too large)'
+              'Skipping file (too large)',
+              { path: relativePath, size: stats.size, maxFileSize }
             );
             continue;
           }
         } catch (error) {
-          logger.warn({ path: relativePath, error }, 'Failed to stat file');
+          logger.warn('Failed to stat file');
           continue;
         }
 
@@ -226,13 +223,13 @@ export class FileScannerService {
     try {
       const content = await fs.readFile(gitignorePath, 'utf-8');
       const ig = ignore().add(content);
-      logger.debug({ path: gitignorePath }, 'Loaded .gitignore');
+      logger.debug('Loaded .gitignore', { path: gitignorePath });
       return ig;
     } catch (error) {
       // .gitignore not found or not readable - this is fine
       logger.debug(
-        { path: gitignorePath },
-        'No .gitignore found or not readable'
+        'No .gitignore found or not readable',
+        { path: gitignorePath }
       );
       return null;
     }

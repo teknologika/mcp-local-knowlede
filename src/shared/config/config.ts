@@ -6,9 +6,13 @@
 import { readFileSync, existsSync } from 'fs';
 import { homedir } from 'os';
 import { resolve, join } from 'path';
-import Ajv, { type JSONSchemaType } from 'ajv';
-import addFormats from 'ajv-formats';
+import AjvModule, { type JSONSchemaType } from 'ajv';
+import addFormatsModule from 'ajv-formats';
 import type { Config, LogLevel } from '../types/index.js';
+
+// Handle both ESM and CJS module formats
+const Ajv = (AjvModule as any).default || AjvModule;
+const addFormats = (addFormatsModule as any).default || addFormatsModule;
 
 /**
  * Current schema version
@@ -19,8 +23,8 @@ export const SCHEMA_VERSION = '1.0.0';
  * Default configuration values
  */
 export const DEFAULT_CONFIG: Config = {
-  chromadb: {
-    persistPath: join(homedir(), '.codebase-memory', 'chromadb'),
+  lancedb: {
+    persistPath: join(homedir(), '.codebase-memory', 'lancedb'),
   },
   embedding: {
     modelName: 'Xenova/all-MiniLM-L6-v2',
@@ -53,7 +57,7 @@ export const DEFAULT_CONFIG: Config = {
 const configSchema: JSONSchemaType<Config> = {
   type: 'object',
   properties: {
-    chromadb: {
+    lancedb: {
       type: 'object',
       properties: {
         persistPath: { type: 'string', minLength: 1 },
@@ -318,7 +322,7 @@ export function loadConfig(configPath?: string): Config {
   if (!validateConfig(config)) {
     const errors = validateConfig.errors || [];
     const errorMessages = errors.map(
-      (err) => `${err.instancePath} ${err.message}`
+      (err: any) => `${err.instancePath} ${err.message}`
     );
     throw new ConfigValidationError(
       `Configuration validation failed:\n${errorMessages.join('\n')}`,
@@ -343,5 +347,5 @@ export function validateConfigObject(config: unknown): config is Config {
 export function getConfigValidationErrors(config: unknown): string[] {
   validateConfig(config);
   const errors = validateConfig.errors || [];
-  return errors.map((err) => `${err.instancePath} ${err.message}`);
+  return errors.map((err: any) => `${err.instancePath} ${err.message}`);
 }

@@ -224,17 +224,24 @@ describe('HuggingFaceEmbeddingService', () => {
       );
     });
 
-    it('should throw error if any embedding fails in batch', async () => {
-      const texts = ['function foo() {}', 'class Bar {}'];
+    it('should skip failed embeddings in batch and continue with others', async () => {
+      const texts = ['function foo() {}', 'class Bar {}', 'const baz = 1;'];
       
       // Make the second call fail
       mockPipeline
         .mockResolvedValueOnce({ data: new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5]) })
-        .mockRejectedValueOnce(new Error('Embedding failed'));
+        .mockRejectedValueOnce(new Error('Embedding failed'))
+        .mockResolvedValueOnce({ data: new Float32Array([0.6, 0.7, 0.8, 0.9, 1.0]) });
 
-      await expect(service.batchGenerateEmbeddings(texts)).rejects.toThrow(
-        'Failed to generate embedding: Embedding failed'
-      );
+      const embeddings = await service.batchGenerateEmbeddings(texts);
+
+      // Should return only successful embeddings (first and third)
+      expect(embeddings).toHaveLength(2);
+      expect(embeddings[0]).toHaveLength(5);
+      expect(embeddings[1]).toHaveLength(5);
+      // Check approximate values due to Float32Array precision
+      expect(embeddings[0][0]).toBeCloseTo(0.1, 1);
+      expect(embeddings[1][0]).toBeCloseTo(0.6, 1);
     });
 
     it('should handle large batches', async () => {

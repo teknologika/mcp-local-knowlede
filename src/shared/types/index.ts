@@ -21,7 +21,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
  * Configuration interface for the entire system
  */
 export interface Config {
-  chromadb: {
+  lancedb: {
     persistPath: string;
   };
   embedding: {

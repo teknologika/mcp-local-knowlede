@@ -90,7 +90,7 @@ export async function registerRoutes(
    * GET /api/codebases
    * List all codebases with metadata
    */
-  fastify.get('/api/codebases', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/api/codebases', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       logger.info('GET /api/codebases');
       const codebases = await codebaseService.listCodebases();

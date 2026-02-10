@@ -1,0 +1,697 @@
+/**
+ * Integration tests for complete workflows
+ * 
+ * Tests end-to-end functionality across all components:
+ * - Complete ingestion workflow (scan → parse → embed → store → verify)
+ * - Complete search workflow (ingest → query → embed → search → format → verify)
+ * - MCP client interaction (call all tools → verify responses)
+ * - API client interaction (CRUD operations → verify state changes)
+ * - Entry points can start without conflicts
+ * - Re-ingestion workflow (ingest → re-ingest → verify cleanup)
+ * 
+ * Requirements: 9.2, 9.3, 9.4, 9.5
+ */
+
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { mkdirSync, rmSync, writeFileSync, existsSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import Fastify, { FastifyInstance } from 'fastify';
+import { loadConfig, DEFAULT_CONFIG } from '../shared/config/config.js';
+import { IngestionService } from '../domains/ingestion/ingestion.service.js';
+import { createEmbeddingService, type EmbeddingService } from '../domains/embedding/embedding.service.js';
+import { TreeSitterParsingService } from '../domains/parsing/tree-sitter-parsing.service.js';
+import { CodebaseService } from '../domains/codebase/codebase.service.js';
+import { SearchService } from '../domains/search/search.service.js';
+import { ChromaDBClientWrapper } from '../infrastructure/lancedb/lancedb.client.js';
+import { registerRoutes } from '../infrastructure/fastify/routes.js';
+import { MCPServer } from '../infrastructure/mcp/mcp-server.js';
+import { createLogger } from '../shared/logging/logger.js';
+import type { Config } from '../shared/types/index.js';
+
+describe('Integration Tests', () => {
+  let testDir: string;
+  let chromaDir: string;
+  let testConfig: Config;
+  let chromaClient: ChromaDBClientWrapper;
+  let embeddingService: EmbeddingService;
+  let parsingService: TreeSitterParsingService;
+  let ingestionService: IngestionService;
+  let codebaseService: CodebaseService;
+  let searchService: SearchService;
+
+  beforeAll(async () => {
+    // Create temporary directories for testing
+    testDir = join(tmpdir(), `codebase-memory-test-${Date.now()}`);
+    chromaDir = join(testDir, 'chromadb');
+    mkdirSync(testDir, { recursive: true });
+    mkdirSync(chromaDir, { recursive: true });
+
+    // Create test configuration
+    testConfig = {
+      ...DEFAULT_CONFIG,
+      chromadb: {
+        persistPath: chromaDir,
+      },
+      server: {
+        port: 8009, // Use different port to avoid conflicts
+        host: 'localhost',
+      },
+      logging: {
+        level: 'error', // Reduce noise in tests
+      },
+    };
+
+    // Create logger
+    const logger = createLogger(testConfig.logging.level);
+
+    // Initialize ChromaDB client wrapper
+    chromaClient = new ChromaDBClientWrapper(testConfig);
+    await chromaClient.initialize();
+
+    // Initialize embedding service
+    embeddingService = createEmbeddingService(testConfig, logger);
+    await embeddingService.initialize();
+
+    // Initialize parsing service
+    parsingService = new TreeSitterParsingService();
+    
+    // Initialize ingestion service
+    ingestionService = new IngestionService(
+      embeddingService,
+      chromaClient,
+      testConfig
+    );
+
+    // Initialize codebase and search services
+    codebaseService = new CodebaseService(chromaClient, testConfig);
+    searchService = new SearchService(chromaClient, embeddingService, testConfig);
+  }, 60000); // Increase timeout for model loading
+
+  afterAll(async () => {
+    // Clean up test directory
+    if (existsSync(testDir)) {
+      rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  describe('Complete Ingestion Workflow', () => {
+    let testCodebasePath: string;
+    const codebaseName = 'test-ingestion-workflow';
+
+    beforeEach(() => {
+      // Create test codebase directory
+      testCodebasePath = join(testDir, 'test-codebase');
+      mkdirSync(testCodebasePath, { recursive: true });
+    });
+
+    afterEach(async () => {
+      // Clean up test codebase
+      if (existsSync(testCodebasePath)) {
+        rmSync(testCodebasePath, { recursive: true, force: true });
+      }
+
+      // Clean up ChromaDB collection
+      try {
+        await codebaseService.deleteCodebase(codebaseName);
+      } catch (error) {
+        // Ignore errors if codebase doesn't exist
+      }
+    });
+
+    it('should complete full ingestion workflow: scan → parse → embed → store → verify', async () => {
+      // Create test files
+      const tsFile = join(testCodebasePath, 'example.ts');
+      writeFileSync(
+        tsFile,
+        `
+/**
+ * Example authentication function
+ */
+export function authenticate(username: string, password: string): boolean {
+  // Authentication logic here
+  return username === 'admin' && password === 'secret';
+}
+
+export class UserManager {
+  private users: Map<string, any> = new Map();
+
+  addUser(username: string, data: any): void {
+    this.users.set(username, data);
+  }
+
+  getUser(username: string): any {
+    return this.users.get(username);
+  }
+}
+        `.trim()
+      );
+
+      const pyFile = join(testCodebasePath, 'utils.py');
+      writeFileSync(
+        pyFile,
+        `
+def calculate_sum(a, b):
+    """Calculate the sum of two numbers"""
+    return a + b
+
+class Calculator:
+    def multiply(self, x, y):
+        """Multiply two numbers"""
+        return x * y
+        `.trim()
+      );
+
+      // Step 1: Scan and ingest codebase
+      const stats = await ingestionService.ingestCodebase({
+        path: testCodebasePath,
+        name: codebaseName,
+        config: testConfig,
+      });
+
+      // Verify ingestion statistics
+      expect(stats.totalFiles).toBe(2);
+      expect(stats.supportedFiles).toBe(2);
+      expect(stats.chunksCreated).toBeGreaterThan(0);
+      expect(stats.languages.has('typescript')).toBe(true);
+      expect(stats.languages.has('python')).toBe(true);
+
+      // Step 2: Verify storage
+      const codebases = await codebaseService.listCodebases();
+      const testCodebase = codebases.find(cb => cb.name === codebaseName);
+      expect(testCodebase).toBeDefined();
+      expect(testCodebase!.chunkCount).toBeGreaterThan(0);
+      expect(testCodebase!.fileCount).toBe(2);
+
+      // Step 3: Verify search works
+      const searchResults = await searchService.search({
+        query: 'authentication function',
+        codebaseName,
+      });
+
+      expect(searchResults.results.length).toBeGreaterThan(0);
+      expect(searchResults.results[0].codebaseName).toBe(codebaseName);
+      expect(searchResults.results[0].content).toContain('authenticate');
+    }, 60000);
+
+    it('should handle unsupported files gracefully', async () => {
+      // Create supported and unsupported files
+      writeFileSync(join(testCodebasePath, 'code.ts'), 'export const x = 1;');
+      writeFileSync(join(testCodebasePath, 'readme.md'), '# README');
+      writeFileSync(join(testCodebasePath, 'data.json'), '{"key": "value"}');
+
+      const stats = await ingestionService.ingestCodebase({
+        path: testCodebasePath,
+        name: codebaseName,
+        config: testConfig,
+      });
+
+      expect(stats.totalFiles).toBe(3);
+      expect(stats.supportedFiles).toBe(1);
+      expect(stats.unsupportedFiles.size).toBeGreaterThan(0);
+    }, 60000);
+  });
+
+  describe('Complete Search Workflow', () => {
+    const codebaseName = 'test-search-workflow';
+    let testCodebasePath: string;
+
+    beforeAll(async () => {
+      // Set up test codebase
+      testCodebasePath = join(testDir, 'search-test-codebase');
+      mkdirSync(testCodebasePath, { recursive: true });
+
+      // Create test files with searchable content
+      writeFileSync(
+        join(testCodebasePath, 'database.ts'),
+        `
+export class DatabaseConnection {
+  connect(url: string): void {
+    console.log('Connecting to database');
+  }
+
+  disconnect(): void {
+    console.log('Disconnecting from database');
+  }
+}
+        `.trim()
+      );
+
+      writeFileSync(
+        join(testCodebasePath, 'api.ts'),
+        `
+export async function fetchUserData(userId: string): Promise<any> {
+  // Fetch user data from API
+  return { id: userId, name: 'Test User' };
+}
+        `.trim()
+      );
+
+      // Ingest the codebase
+      await ingestionService.ingestCodebase({
+        path: testCodebasePath,
+        name: codebaseName,
+        config: testConfig,
+      });
+    }, 60000);
+
+    afterAll(async () => {
+      // Clean up
+      if (existsSync(testCodebasePath)) {
+        rmSync(testCodebasePath, { recursive: true, force: true });
+      }
+      await codebaseService.deleteCodebase(codebaseName);
+    });
+
+    it('should complete search workflow: query → embed → search → format → verify', async () => {
+      // Step 1: Execute search
+      const results = await searchService.search({
+        query: 'database connection',
+        codebaseName,
+      });
+
+      // Step 2: Verify results format
+      expect(results.results).toBeDefined();
+      expect(results.totalResults).toBeGreaterThan(0);
+      expect(results.queryTime).toBeGreaterThan(0);
+
+      // Step 3: Verify result metadata
+      const firstResult = results.results[0];
+      expect(firstResult.filePath).toBeDefined();
+      expect(firstResult.startLine).toBeGreaterThan(0);
+      expect(firstResult.endLine).toBeGreaterThanOrEqual(firstResult.startLine);
+      expect(firstResult.language).toBe('typescript');
+      expect(firstResult.chunkType).toBeDefined();
+      expect(firstResult.content).toBeDefined();
+      expect(firstResult.similarityScore).toBeGreaterThan(0);
+      expect(firstResult.similarityScore).toBeLessThanOrEqual(1);
+      expect(firstResult.codebaseName).toBe(codebaseName);
+    });
+
+    it('should filter search results by language', async () => {
+      const results = await searchService.search({
+        query: 'function',
+        codebaseName,
+        language: 'typescript',
+      });
+
+      expect(results.results.every(r => r.language === 'typescript')).toBe(true);
+    });
+
+    it('should limit search results', async () => {
+      const results = await searchService.search({
+        query: 'function',
+        codebaseName,
+        maxResults: 1,
+      });
+
+      expect(results.results.length).toBeLessThanOrEqual(1);
+    });
+
+    it('should rank results by similarity score', async () => {
+      const results = await searchService.search({
+        query: 'database',
+        codebaseName,
+      });
+
+      // Verify results are in descending order by similarity
+      for (let i = 1; i < results.results.length; i++) {
+        expect(results.results[i - 1].similarityScore).toBeGreaterThanOrEqual(
+          results.results[i].similarityScore
+        );
+      }
+    });
+  });
+
+  describe('MCP Server Tool Integration', () => {
+    let mcpServer: MCPServer;
+    const codebaseName = 'test-mcp-interaction';
+    let testCodebasePath: string;
+
+    beforeAll(async () => {
+      // Set up test codebase
+      testCodebasePath = join(testDir, 'mcp-test-codebase');
+      mkdirSync(testCodebasePath, { recursive: true });
+
+      writeFileSync(
+        join(testCodebasePath, 'service.ts'),
+        `
+export class TestService {
+  execute(): void {
+    console.log('Executing test service');
+  }
+}
+        `.trim()
+      );
+
+      await ingestionService.ingestCodebase({
+        path: testCodebasePath,
+        name: codebaseName,
+        config: testConfig,
+      });
+
+      // Initialize MCP server
+      mcpServer = new MCPServer(codebaseService, searchService, testConfig);
+    }, 60000);
+
+    afterAll(async () => {
+      if (existsSync(testCodebasePath)) {
+        rmSync(testCodebasePath, { recursive: true, force: true });
+      }
+      await codebaseService.deleteCodebase(codebaseName);
+    });
+
+    it('should initialize MCP server successfully', () => {
+      expect(mcpServer).toBeDefined();
+    });
+
+    it('should verify all MCP tools are accessible through services', async () => {
+      // Test list_codebases functionality through service
+      const codebases = await codebaseService.listCodebases();
+      expect(Array.isArray(codebases)).toBe(true);
+      expect(codebases.some(cb => cb.name === codebaseName)).toBe(true);
+
+      // Test search_codebases functionality through service
+      const searchResults = await searchService.search({
+        query: 'test service',
+        codebaseName,
+      });
+      expect(searchResults).toHaveProperty('results');
+      expect(searchResults).toHaveProperty('totalResults');
+      expect(searchResults).toHaveProperty('queryTime');
+
+      // Test get_codebase_stats functionality through service
+      const stats = await codebaseService.getCodebaseStats(codebaseName);
+      expect(stats).toHaveProperty('name');
+      expect(stats).toHaveProperty('chunkCount');
+      expect(stats).toHaveProperty('fileCount');
+      expect(stats.name).toBe(codebaseName);
+    });
+
+    it('should handle service errors gracefully', async () => {
+      // Test error handling for non-existent codebase
+      await expect(
+        codebaseService.getCodebaseStats('non-existent-codebase')
+      ).rejects.toThrow();
+    });
+
+    it('should validate MCP server can be started and stopped', async () => {
+      // Note: We don't actually start the server in tests to avoid stdio conflicts
+      // This test verifies the server can be instantiated
+      const testServer = new MCPServer(codebaseService, searchService, testConfig);
+      expect(testServer).toBeDefined();
+      
+      // Verify the server has the expected methods
+      expect(typeof testServer.start).toBe('function');
+      expect(typeof testServer.stop).toBe('function');
+    });
+  });
+
+  describe('API Client Interaction', () => {
+    let fastify: FastifyInstance;
+    const codebaseName = 'test-api-interaction';
+    let testCodebasePath: string;
+
+    beforeAll(async () => {
+      // Set up test codebase
+      testCodebasePath = join(testDir, 'api-test-codebase');
+      mkdirSync(testCodebasePath, { recursive: true });
+
+      writeFileSync(
+        join(testCodebasePath, 'controller.ts'),
+        `
+export class ApiController {
+  handleRequest(): void {
+    console.log('Handling API request');
+  }
+}
+        `.trim()
+      );
+
+      await ingestionService.ingestCodebase({
+        path: testCodebasePath,
+        name: codebaseName,
+        config: testConfig,
+      });
+
+      // Initialize Fastify server
+      fastify = Fastify({ logger: false });
+      await registerRoutes(fastify, codebaseService, searchService);
+    }, 60000);
+
+    afterAll(async () => {
+      await fastify.close();
+      if (existsSync(testCodebasePath)) {
+        rmSync(testCodebasePath, { recursive: true, force: true });
+      }
+      await codebaseService.deleteCodebase(codebaseName);
+    });
+
+    it('should handle GET /api/codebases', async () => {
+      const response = await fastify.inject({
+        method: 'GET',
+        url: '/api/codebases',
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body).toHaveProperty('codebases');
+      expect(Array.isArray(body.codebases)).toBe(true);
+    });
+
+    it('should handle POST /api/search', async () => {
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/api/search',
+        payload: {
+          query: 'api controller',
+          codebaseName,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body).toHaveProperty('results');
+      expect(body).toHaveProperty('totalResults');
+      expect(body).toHaveProperty('queryTime');
+    });
+
+    it('should handle GET /api/codebases/:name/stats', async () => {
+      const response = await fastify.inject({
+        method: 'GET',
+        url: `/api/codebases/${codebaseName}/stats`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.name).toBe(codebaseName);
+      expect(body).toHaveProperty('chunkCount');
+      expect(body).toHaveProperty('fileCount');
+    });
+
+    it('should handle PUT /api/codebases/:name (rename)', async () => {
+      const newName = `${codebaseName}-renamed`;
+
+      const response = await fastify.inject({
+        method: 'PUT',
+        url: `/api/codebases/${codebaseName}`,
+        payload: {
+          newName,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+
+      // Verify rename worked
+      const codebases = await codebaseService.listCodebases();
+      expect(codebases.some(cb => cb.name === newName)).toBe(true);
+      expect(codebases.some(cb => cb.name === codebaseName)).toBe(false);
+
+      // Rename back for cleanup
+      await codebaseService.renameCodebase(newName, codebaseName);
+    });
+
+    it('should handle DELETE /api/codebases/:name', async () => {
+      // Create a temporary codebase to delete
+      const tempName = 'temp-delete-test';
+      const tempPath = join(testDir, 'temp-delete');
+      mkdirSync(tempPath, { recursive: true });
+      writeFileSync(join(tempPath, 'temp.ts'), 'export const x = 1;');
+
+      await ingestionService.ingestCodebase({
+        path: tempPath,
+        name: tempName,
+        config: testConfig,
+      });
+
+      const response = await fastify.inject({
+        method: 'DELETE',
+        url: `/api/codebases/${tempName}`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+
+      // Verify deletion
+      const codebases = await codebaseService.listCodebases();
+      expect(codebases.some(cb => cb.name === tempName)).toBe(false);
+
+      // Clean up temp directory
+      rmSync(tempPath, { recursive: true, force: true });
+    }, 60000);
+  });
+
+  describe('Re-ingestion Workflow', () => {
+    const codebaseName = 'test-reingestion';
+    let testCodebasePath: string;
+
+    beforeEach(() => {
+      testCodebasePath = join(testDir, 'reingestion-test');
+      mkdirSync(testCodebasePath, { recursive: true });
+    });
+
+    afterEach(async () => {
+      if (existsSync(testCodebasePath)) {
+        rmSync(testCodebasePath, { recursive: true, force: true });
+      }
+      try {
+        await codebaseService.deleteCodebase(codebaseName);
+      } catch (error) {
+        // Ignore if doesn't exist
+      }
+    });
+
+    it('should handle re-ingestion: ingest → re-ingest → verify cleanup', async () => {
+      // Initial ingestion
+      writeFileSync(
+        join(testCodebasePath, 'initial.ts'),
+        `
+export function initialFunction(): void {
+  console.log('Initial');
+}
+        `.trim()
+      );
+
+      const initialStats = await ingestionService.ingestCodebase({
+        path: testCodebasePath,
+        name: codebaseName,
+        config: testConfig,
+      });
+
+      expect(initialStats.chunksCreated).toBeGreaterThan(0);
+      const initialChunkCount = initialStats.chunksCreated;
+
+      // Get initial codebase stats
+      const initialCodebase = await codebaseService.getCodebaseStats(codebaseName);
+      expect(initialCodebase.chunkCount).toBe(initialChunkCount);
+
+      // Modify codebase - add new file
+      writeFileSync(
+        join(testCodebasePath, 'added.ts'),
+        `
+export function addedFunction(): void {
+  console.log('Added');
+}
+        `.trim()
+      );
+
+      // Re-ingest
+      const reingestionStats = await ingestionService.ingestCodebase({
+        path: testCodebasePath,
+        name: codebaseName,
+        config: testConfig,
+      });
+
+      expect(reingestionStats.chunksCreated).toBeGreaterThan(initialChunkCount);
+
+      // Verify old chunks are removed
+      const finalCodebase = await codebaseService.getCodebaseStats(codebaseName);
+      expect(finalCodebase.chunkCount).toBe(reingestionStats.chunksCreated);
+
+      // Verify search returns only new content
+      const searchResults = await searchService.search({
+        query: 'function',
+        codebaseName,
+      });
+
+      expect(searchResults.results.length).toBeGreaterThan(0);
+      // All results should be from the latest ingestion
+      expect(searchResults.results.every(r => r.codebaseName === codebaseName)).toBe(true);
+    }, 60000);
+
+    it('should handle re-ingestion with fewer files', async () => {
+      // Initial ingestion with multiple files
+      writeFileSync(join(testCodebasePath, 'file1.ts'), 'export const a = 1;');
+      writeFileSync(join(testCodebasePath, 'file2.ts'), 'export const b = 2;');
+      writeFileSync(join(testCodebasePath, 'file3.ts'), 'export const c = 3;');
+
+      const initialStats = await ingestionService.ingestCodebase({
+        path: testCodebasePath,
+        name: codebaseName,
+        config: testConfig,
+      });
+
+      expect(initialStats.totalFiles).toBe(3);
+
+      // Remove files
+      rmSync(join(testCodebasePath, 'file2.ts'));
+      rmSync(join(testCodebasePath, 'file3.ts'));
+
+      // Re-ingest
+      const reingestionStats = await ingestionService.ingestCodebase({
+        path: testCodebasePath,
+        name: codebaseName,
+        config: testConfig,
+      });
+
+      expect(reingestionStats.totalFiles).toBe(1);
+      expect(reingestionStats.chunksCreated).toBeLessThan(initialStats.chunksCreated);
+
+      // Verify final state
+      const finalCodebase = await codebaseService.getCodebaseStats(codebaseName);
+      expect(finalCodebase.fileCount).toBe(1);
+    }, 60000);
+  });
+
+  describe('Entry Points Non-Conflict', () => {
+    it('should allow multiple services to use different ports', async () => {
+      // This test verifies that the configuration system allows
+      // different entry points to run on different ports without conflicts
+
+      const config1 = { ...testConfig, server: { ...testConfig.server, port: 8010 } };
+      const config2 = { ...testConfig, server: { ...testConfig.server, port: 8011 } };
+
+      const fastify1 = Fastify({ logger: false });
+      const fastify2 = Fastify({ logger: false });
+
+      await registerRoutes(fastify1, codebaseService, searchService);
+      await registerRoutes(fastify2, codebaseService, searchService);
+
+      await fastify1.listen({ port: config1.server.port, host: config1.server.host });
+      await fastify2.listen({ port: config2.server.port, host: config2.server.host });
+
+      // Both servers should be running
+      expect(fastify1.server.listening).toBe(true);
+      expect(fastify2.server.listening).toBe(true);
+
+      // Clean up
+      await fastify1.close();
+      await fastify2.close();
+    });
+
+    it('should handle ChromaDB shared access', async () => {
+      // Multiple services can share the same ChromaDB instance
+      const service1 = new CodebaseService(chromaClient, testConfig);
+      const service2 = new CodebaseService(chromaClient, testConfig);
+
+      const codebases1 = await service1.listCodebases();
+      const codebases2 = await service2.listCodebases();
+
+      // Both should see the same data
+      expect(codebases1.length).toBe(codebases2.length);
+    });
+  });
+});

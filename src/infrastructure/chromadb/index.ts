@@ -2,4 +2,4 @@
  * ChromaDB infrastructure exports
  */
 
-export { ChromaDBClientWrapper, ChromaDBError, type CollectionInfo } from './chromadb.client.js';
+export { ChromaDBClientWrapper, ChromaDBError, type CollectionInfo } from '../lancedb/lancedb.client.js';

@@ -9,3 +9,16 @@ export {
   type LogContext,
   type LogError,
 } from './logger.js';
+
+export {
+  startTimer,
+  measureAsync,
+  measureSync,
+  getMemoryUsage,
+  formatMemorySize,
+  logMemoryUsage,
+  trackMemory,
+  PerformanceTimer,
+  SLOW_OPERATION_THRESHOLD_MS,
+  type MemorySnapshot,
+} from './performance.js';

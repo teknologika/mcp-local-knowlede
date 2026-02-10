@@ -9,9 +9,9 @@ import type {
   SearchResult,
   Config 
 } from '../../shared/types/index.js';
-import { ChromaDBClientWrapper } from '../../infrastructure/chromadb/chromadb.client.js';
+import { ChromaDBClientWrapper } from '../../infrastructure/lancedb/lancedb.client.js';
 import type { EmbeddingService } from '../embedding/embedding.service.js';
-import { createLogger } from '../../shared/logging/index.js';
+import { createLogger, startTimer } from '../../shared/logging/index.js';
 
 const rootLogger = createLogger('info');
 const logger = rootLogger.child('SearchService');
@@ -107,7 +107,11 @@ export class SearchService {
    * Search codebases with semantic similarity
    */
   async search(params: SearchParams): Promise<SearchResults> {
-    const startTime = Date.now();
+    const timer = startTimer('search', logger, {
+      query: params.query.substring(0, 100),
+      codebaseName: params.codebaseName,
+      language: params.language,
+    });
 
     try {
       logger.info('Executing search', {
@@ -120,9 +124,10 @@ export class SearchService {
       // Check cache first
       const cachedResults = this.getCachedResults(params);
       if (cachedResults) {
+        const queryTime = timer.end();
         logger.info('Returning cached search results', {
           resultCount: cachedResults.results.length,
-          queryTime: Date.now() - startTime,
+          queryTime,
         });
         return cachedResults;
       }
@@ -134,7 +139,9 @@ export class SearchService {
 
       // Generate query embedding
       logger.debug('Generating query embedding');
+      const embeddingTimer = startTimer('generateQueryEmbedding', logger);
       const queryEmbedding = await this.embeddingService.generateEmbedding(params.query);
+      embeddingTimer.end();
 
       // Determine which collections to search
       const collections = await this.getCollectionsToSearch(params.codebaseName);
@@ -143,10 +150,11 @@ export class SearchService {
         logger.warn('No collections found to search', {
           codebaseName: params.codebaseName,
         });
+        const queryTime = timer.end();
         const emptyResults: SearchResults = {
           results: [],
           totalResults: 0,
-          queryTime: Date.now() - startTime,
+          queryTime,
         };
         return emptyResults;
       }
@@ -156,9 +164,11 @@ export class SearchService {
       const maxResults = params.maxResults || this.config.search.defaultMaxResults;
 
       for (const collectionName of collections) {
+        const collectionTimer = startTimer('searchCollection', logger, { collectionName });
         try {
           const col = await this.chromaClient.getClient().getCollection({
             name: collectionName,
+            embeddingFunction: this.chromaClient.getEmbeddingFunction(),
           });
 
           // Build where clause for metadata filters
@@ -172,7 +182,7 @@ export class SearchService {
             queryEmbeddings: [queryEmbedding],
             nResults: maxResults,
             where: Object.keys(where).length > 0 ? where : undefined,
-            include: ['metadatas', 'documents', 'distances'],
+            include: ['metadatas' as any, 'documents' as any, 'distances' as any],
           });
 
           // Process results
@@ -204,7 +214,9 @@ export class SearchService {
               allResults.push(result);
             }
           }
+          collectionTimer.end();
         } catch (error) {
+          collectionTimer.end();
           logger.warn('Failed to search collection', {
             collectionName,
             error: error instanceof Error ? error.message : String(error),
@@ -219,7 +231,7 @@ export class SearchService {
       // Limit to max results
       const limitedResults = allResults.slice(0, maxResults);
 
-      const queryTime = Date.now() - startTime;
+      const queryTime = timer.end();
 
       const results: SearchResults = {
         results: limitedResults,
@@ -237,6 +249,7 @@ export class SearchService {
 
       return results;
     } catch (error) {
+      timer.end();
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(
         'Search failed',

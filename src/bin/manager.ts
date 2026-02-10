@@ -17,7 +17,7 @@ import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import { loadConfig } from '../shared/config/index.js';
 import { createLogger } from '../shared/logging/index.js';
-import { ChromaDBClientWrapper } from '../infrastructure/chromadb/chromadb.client.js';
+import { ChromaDBClientWrapper } from '../infrastructure/lancedb/lancedb.client.js';
 import { HuggingFaceEmbeddingService } from '../domains/embedding/index.js';
 import { CodebaseService } from '../domains/codebase/codebase.service.js';
 import { SearchService } from '../domains/search/search.service.js';
@@ -92,6 +92,9 @@ async function main() {
     });
     const chromaClient = new ChromaDBClientWrapper(config);
     await chromaClient.initialize();
+
+    // Check schema versions of existing collections
+    await chromaClient.checkAllSchemaVersions();
 
     // Initialize embedding service
     mainLogger.info('Initializing embedding service', {

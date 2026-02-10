@@ -15,7 +15,7 @@
 
 import { loadConfig } from '../shared/config/index.js';
 import { createLogger } from '../shared/logging/index.js';
-import { ChromaDBClientWrapper } from '../infrastructure/chromadb/chromadb.client.js';
+import { ChromaDBClientWrapper } from '../infrastructure/lancedb/lancedb.client.js';
 import { HuggingFaceEmbeddingService } from '../domains/embedding/index.js';
 import { CodebaseService } from '../domains/codebase/codebase.service.js';
 import { SearchService } from '../domains/search/search.service.js';
@@ -58,19 +58,29 @@ async function main() {
       schemaVersion: config.schemaVersion,
     });
 
-    // Initialize ChromaDB client
-    mainLogger.info('Initializing ChromaDB client', {
+    // Initialize ChromaDB client (non-blocking - will create directory if needed)
+    mainLogger.info('Creating ChromaDB client', {
       persistPath: config.chromadb.persistPath,
     });
     const chromaClient = new ChromaDBClientWrapper(config);
-    await chromaClient.initialize();
+    
+    // Try to initialize, but don't fail if ChromaDB isn't available yet
+    try {
+      await chromaClient.initialize();
+      await chromaClient.checkAllSchemaVersions();
+    } catch (error) {
+      mainLogger.warn('ChromaDB initialization failed, will retry on first use', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Don't exit - let the server start and ChromaDB will initialize on first use
+    }
 
-    // Initialize embedding service
-    mainLogger.info('Initializing embedding service', {
+    // Initialize embedding service (lazy - will initialize on first use)
+    mainLogger.info('Creating embedding service', {
       modelName: config.embedding.modelName,
     });
     const embeddingService = new HuggingFaceEmbeddingService(config, logger);
-    await embeddingService.initialize();
+    // Don't initialize yet - let it initialize on first use to avoid blocking startup
 
     // Initialize codebase service
     mainLogger.info('Initializing codebase service');
@@ -109,6 +119,9 @@ async function main() {
     await mcpServer.start();
 
     mainLogger.info('MCP server is running and ready to accept requests');
+
+    // Keep the process alive - stdio transport will handle communication
+    // Process will exit on SIGINT/SIGTERM or when client closes connection
   } catch (error) {
     const errorLogger = logger.child('main');
     errorLogger.error(

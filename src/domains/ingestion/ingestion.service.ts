@@ -17,8 +17,8 @@ import type { Config, IngestionParams, IngestionStats, LanguageStats, Chunk } fr
 import { FileScannerService, type ScannedFile } from './file-scanner.service.js';
 import { TreeSitterParsingService } from '../parsing/tree-sitter-parsing.service.js';
 import type { EmbeddingService } from '../embedding/embedding.service.js';
-import { ChromaDBClientWrapper } from '../../infrastructure/chromadb/chromadb.client.js';
-import { createLogger } from '../../shared/logging/index.js';
+import { ChromaDBClientWrapper } from '../../infrastructure/lancedb/lancedb.client.js';
+import { createLogger, startTimer, logMemoryUsage } from '../../shared/logging/index.js';
 import type { Logger } from '../../shared/logging/logger.js';
 
 const rootLogger = createLogger('info');
@@ -74,13 +74,18 @@ export class IngestionService {
     params: IngestionParams,
     progressCallback?: ProgressCallback
   ): Promise<IngestionStats> {
-    const startTime = Date.now();
+    const overallTimer = startTimer('ingestCodebase', this.logger, {
+      codebaseName: params.name,
+    });
     const { path: codebasePath, name: codebaseName } = params;
 
     this.logger.info('Starting codebase ingestion', {
       codebaseName,
       codebasePath,
     });
+
+    // Log initial memory usage
+    logMemoryUsage(this.logger, { phase: 'start', codebaseName });
 
     try {
       // Generate unique ingestion timestamp
@@ -90,6 +95,7 @@ export class IngestionService {
       this.logger.info('Phase 1: Scanning directory', { codebasePath });
       progressCallback?.('Scanning directory', 0, 1);
 
+      const scanTimer = startTimer('scanDirectory', this.logger);
       const { files, statistics: scanStats } = await this.fileScanner.scanDirectory(
         codebasePath,
         {
@@ -98,6 +104,7 @@ export class IngestionService {
           maxFileSize: this.config.ingestion.maxFileSize,
         }
       );
+      scanTimer.end();
 
       const supportedFiles = this.fileScanner.getSupportedFiles(files);
       const unsupportedFiles = this.fileScanner.getUnsupportedFiles(files);
@@ -113,6 +120,10 @@ export class IngestionService {
 
       // Phase 2: Parse files and extract chunks
       this.logger.info('Phase 2: Parsing files and extracting chunks', {
+        fileCount: supportedFiles.length,
+      });
+
+      const parseTimer = startTimer('parseAllFiles', this.logger, {
         fileCount: supportedFiles.length,
       });
 
@@ -161,10 +172,15 @@ export class IngestionService {
         }
       }
 
+      parseTimer.end();
+
       this.logger.info('Parsing completed', {
         totalChunks: allChunks.length,
         languages: Array.from(languageStats.keys()),
       });
+
+      // Log memory after parsing
+      logMemoryUsage(this.logger, { phase: 'afterParsing', codebaseName, chunkCount: allChunks.length });
 
       // Phase 3: Handle re-ingestion (delete existing chunks)
       const previousChunkCount = await this.handleReingestion(codebaseName);
@@ -175,13 +191,26 @@ export class IngestionService {
         batchSize: this.config.ingestion.batchSize,
       });
 
+      const embeddingTimer = startTimer('generateAllEmbeddings', this.logger, {
+        chunkCount: allChunks.length,
+      });
+
       const chunksWithEmbeddings = await this.generateEmbeddingsBatch(
         allChunks,
         progressCallback
       );
 
+      embeddingTimer.end();
+
+      // Log memory after embeddings
+      logMemoryUsage(this.logger, { phase: 'afterEmbeddings', codebaseName, chunkCount: chunksWithEmbeddings.length });
+
       // Phase 5: Store in ChromaDB
       this.logger.info('Phase 4: Storing chunks in ChromaDB', {
+        chunkCount: chunksWithEmbeddings.length,
+      });
+
+      const storeTimer = startTimer('storeAllChunks', this.logger, {
         chunkCount: chunksWithEmbeddings.length,
       });
 
@@ -195,9 +224,14 @@ export class IngestionService {
         progressCallback
       );
 
+      storeTimer.end();
+
       // Calculate statistics
-      const durationMs = Date.now() - startTime;
+      const durationMs = overallTimer.end();
       const chunkDiff = allChunks.length - previousChunkCount;
+
+      // Log final memory usage
+      logMemoryUsage(this.logger, { phase: 'complete', codebaseName });
 
       const stats: IngestionStats = {
         totalFiles: scanStats.totalFiles,
@@ -217,6 +251,7 @@ export class IngestionService {
 
       return stats;
     } catch (error) {
+      overallTimer.end();
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(
         'Ingestion failed',

@@ -7,9 +7,10 @@
  * Requirements: 2.4, 4.1, 4.2, 4.3, 4.5, 12.1
  */
 
-import { pipeline, type Pipeline } from '@huggingface/transformers';
+import { pipeline } from '@huggingface/transformers';
 import type { Config } from '../../shared/types/index.js';
 import type { Logger } from '../../shared/logging/logger.js';
+import { startTimer } from '../../shared/logging/performance.js';
 
 /**
  * Embedding service interface
@@ -58,7 +59,7 @@ export interface EmbeddingService {
  * Implementation of embedding service using Hugging Face transformers
  */
 export class HuggingFaceEmbeddingService implements EmbeddingService {
-  private model: Pipeline | null = null;
+  private model: any | null = null; // Use any to avoid Pipeline type issues
   private readonly modelName: string;
   private readonly cachePath: string;
   private readonly logger: Logger;
@@ -88,7 +89,9 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
       cachePath: this.cachePath,
     });
 
-    const startTime = Date.now();
+    const timer = startTimer('initializeEmbeddingModel', this.logger, {
+      modelName: this.modelName,
+    });
 
     try {
       // Set cache directory for model downloads
@@ -101,11 +104,9 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
       this.model = await pipeline('feature-extraction', this.modelName, {
         // Use local cache
         local_files_only: false,
-        // Quantize for better performance
-        quantized: true,
       });
 
-      const durationMs = Date.now() - startTime;
+      const durationMs = timer.end();
 
       // Test the model to get embedding dimension
       const testEmbedding = await this.generateEmbedding('test');
@@ -117,6 +118,7 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
         durationMs,
       });
     } catch (error) {
+      timer.end();
       this.logger.error(
         'Failed to initialize embedding model',
         error instanceof Error ? error : new Error(String(error)),
@@ -143,6 +145,10 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
       throw new Error('Cannot generate embedding for empty text');
     }
 
+    const timer = startTimer('generateEmbedding', this.logger, {
+      textLength: text.length,
+    });
+
     try {
       // Generate embedding using the pipeline
       const result = await this.model(text, {
@@ -154,8 +160,10 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
       // The result is a tensor, we need to convert it to a plain array
       const embedding = Array.from(result.data as Float32Array);
 
+      timer.end();
       return embedding;
     } catch (error) {
+      timer.end();
       this.logger.error(
         'Failed to generate embedding',
         error instanceof Error ? error : new Error(String(error)),
@@ -219,15 +227,16 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
         } catch (error) {
           // Log error but continue with other texts
           this.logger.error(
-            'Failed to generate embedding in batch',
+            'Failed to generate embedding in batch, skipping',
             error instanceof Error ? error : new Error(String(error)),
             {
               batchIndex: i,
               textLength: validTexts[i].length,
+              textPreview: validTexts[i].substring(0, 100),
             }
           );
-          // Skip this embedding - caller will need to handle missing embeddings
-          throw error; // Re-throw to maintain error handling contract
+          // Skip this embedding and continue with others
+          // The embedding will be undefined and filtered out later
         }
       }
 

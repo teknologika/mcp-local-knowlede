@@ -1,0 +1,28 @@
+{
+  "chromadb": {
+    "persistPath": "~/.codebase-memory/chromadb"
+  },
+  "embedding": {
+    "modelName": "Xenova/all-MiniLM-L6-v2",
+    "cachePath": "~/.codebase-memory/models"
+  },
+  "server": {
+    "port": 8008,
+    "host": "localhost"
+  },
+  "mcp": {
+    "transport": "stdio"
+  },
+  "ingestion": {
+    "batchSize": 100,
+    "maxFileSize": 1048576
+  },
+  "search": {
+    "defaultMaxResults": 50,
+    "cacheTimeoutSeconds": 60
+  },
+  "logging": {
+    "level": "info"
+  },
+  "schemaVersion": "1.0.0"
+}

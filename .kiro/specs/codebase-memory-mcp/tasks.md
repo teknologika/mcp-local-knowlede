@@ -23,7 +23,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Support path expansion for tilde (~) in file paths
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [~]* 1.3 Write property tests for configuration management
+  - [ ]* 1.3 Write property tests for configuration management
     - **Property 21: Configuration Loading** - For any valid config file or env vars, all values should be loaded and accessible
     - **Property 22: Configuration Defaults** - For any missing optional config value, the documented default should be used
     - **Property 23: Configuration Validation** - For any invalid config value, system should exit with error before starting services
@@ -42,7 +42,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Create child logger factory for component-specific logging
     - _Requirements: 11.5_
 
-  - [~]* 1.6 Write property tests for logging
+  - [ ]* 1.6 Write property tests for logging
     - **Property 24: Error Logging Completeness** - For any error, logged output should include component, operation, message, and stack trace
     - **Property 26: Structured Logging Levels** - For any log level config, only messages at or above that level should be output
     - **Validates: Requirements 11.1, 11.5**
@@ -59,7 +59,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Add methods for collection creation, deletion, and metadata queries
     - _Requirements: 5.1, 5.2, 13.4_
 
-  - [~]* 3.2 Write unit tests for ChromaDB client
+  - [ ]* 3.2 Write unit tests for ChromaDB client
     - Test successful connection with valid config
     - Test error handling for invalid persistence path
     - Test collection naming pattern generation
@@ -73,7 +73,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Add supported/unsupported language classification
     - _Requirements: 6.1, 6.4, 6.5_
 
-  - [~]* 3.4 Write property tests for language detection
+  - [ ]* 3.4 Write property tests for language detection
     - **Property 18: Language Detection Accuracy** - For any file with known extension, detected language should match extension mapping
     - **Validates: Requirements 6.1**
 
@@ -84,7 +84,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Track file statistics during scanning
     - _Requirements: 2.1_
 
-  - [~]* 3.6 Write property tests for file scanner
+  - [ ]* 3.6 Write property tests for file scanner
     - **Property 5: Recursive File Discovery** - For any directory structure, all files in nested subdirectories should be discovered
     - **Validates: Requirements 2.1**
 
@@ -101,13 +101,13 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Define chunk extraction rules per language based on design document
     - _Requirements: 2.2, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [~]* 5.2 Write property tests for parsing service
+  - [ ]* 5.2 Write property tests for parsing service
     - **Property 6: Supported Language Parsing** - For any file with supported extension, at least one semantic chunk should be extracted
     - **Property 11: Context Preservation** - For any chunk with comments/docstrings, extracted content should include them
     - **Property 12: Nested Structure Chunking** - For any file with nested structures, separate chunks should be created for each unit
     - **Validates: Requirements 2.2, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6**
 
-  - [~]* 5.3 Write unit tests for parsing edge cases
+  - [ ]* 5.3 Write unit tests for parsing edge cases
     - Test parsing empty files
     - Test parsing files with only comments
     - Test parsing deeply nested structures
@@ -123,7 +123,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Track embedding model version for consistency
     - _Requirements: 2.4, 4.1, 4.2, 4.3, 4.5, 12.1_
 
-  - [~]* 5.5 Write property tests for embedding service
+  - [ ]* 5.5 Write property tests for embedding service
     - **Property 8: Embedding Generation** - For any code chunk, generated embedding should have consistent dimensionality
     - **Property 13: Embedding Model Consistency** - For any two ingestion operations, embedding model name/version should be identical
     - **Property 14: Embedding Error Recovery** - For any chunk where embedding fails, system should log error and continue with remaining chunks
@@ -143,7 +143,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Query ChromaDB for aggregated statistics
     - _Requirements: 1.1, 1.3, 7.3, 7.4, 7.5, 7.6, 8.1, 8.3_
 
-  - [~]* 7.2 Write property tests for codebase service
+  - [ ]* 7.2 Write property tests for codebase service
     - **Property 1: Codebase Retrieval Completeness** - For any set of indexed codebases, list_codebases should return all with complete metadata
     - **Property 4: Statistics Accuracy** - For any codebase, statistics should accurately reflect actual counts in ChromaDB
     - **Property 17: Codebase Deletion Completeness** - For any codebase, deletion should remove collection and all chunks
@@ -161,7 +161,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Track query time for performance monitoring
     - _Requirements: 1.2, 1.5, 5.4, 8.2, 12.3, 12.5_
 
-  - [~]* 7.4 Write property tests for search service
+  - [ ]* 7.4 Write property tests for search service
     - **Property 2: Search Result Relevance and Ranking** - For any search query with filters, results should match filters and be ranked by similarity descending
     - **Property 3: Search Result Metadata Completeness** - For any search result, all required fields should be present
     - **Property 16: Search Filter Application** - For any search with metadata filters, all results should satisfy all filter conditions
@@ -185,7 +185,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Calculate and report diff in chunk count for re-ingestion
     - _Requirements: 2.1, 2.3, 2.5, 2.6, 6.2, 6.3, 12.4, 14.1, 14.2, 14.3_
 
-  - [~]* 9.2 Write property tests for ingestion service
+  - [ ]* 9.2 Write property tests for ingestion service
     - **Property 7: Unsupported Language Handling** - For any file with unsupported extension, system should skip it and log warning
     - **Property 9: Storage Round-Trip Preservation** - For any chunk with metadata, storing and retrieving should preserve all metadata exactly
     - **Property 10: Ingestion Statistics Accuracy** - For any ingestion, reported statistics should match actual processing counts
@@ -205,7 +205,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Handle errors gracefully with clear error messages
     - _Requirements: 9.2, 9.4_
 
-  - [~]* 9.4 Write unit tests for ingestion CLI
+  - [ ]* 9.4 Write unit tests for ingestion CLI
     - Test CLI argument parsing
     - Test error handling for missing required arguments
     - Test statistics output format
@@ -238,13 +238,13 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Implement stdio transport for communication with MCP clients
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 11.3, 15.1, 15.2, 15.3, 15.4, 15.5_
 
-  - [~]* 11.3 Write property tests for MCP server
+  - [ ]* 11.3 Write property tests for MCP server
     - **Property 25: MCP Input Validation** - For any tool call with invalid parameters, server should return structured error without executing
     - **Property 36: MCP Response Format Compliance** - For any successful tool call, response should conform to MCP specification
     - **Property 37: MCP Error Format Compliance** - For any failed tool call, error response should conform to MCP specification
     - **Validates: Requirements 11.3, 15.2, 15.3, 15.4**
 
-  - [~]* 11.4 Write unit tests for MCP tools
+  - [ ]* 11.4 Write unit tests for MCP tools
     - Test each tool with valid inputs
     - Test each tool with invalid inputs
     - Test error handling for service failures
@@ -260,7 +260,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Log startup information and configuration
     - _Requirements: 9.2, 9.3_
 
-  - [~]* 11.6 Write unit tests for MCP server entry point
+  - [ ]* 11.6 Write unit tests for MCP server entry point
     - Test server initialization with valid config
     - Test error handling for initialization failures
     - Test graceful shutdown
@@ -283,11 +283,11 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Add request logging for all endpoints
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 11.4_
 
-  - [~]* 13.2 Write property tests for HTTP API
+  - [ ]* 13.2 Write property tests for HTTP API
     - **Property 20: API Error Response Format** - For any API error, response should include appropriate HTTP status and JSON error with code/message
     - **Validates: Requirements 8.6, 11.4**
 
-  - [~]* 13.3 Write unit tests for API endpoints
+  - [ ]* 13.3 Write unit tests for API endpoints
     - Test each endpoint with valid inputs
     - Test each endpoint with invalid inputs
     - Test 404 responses for non-existent resources
@@ -316,7 +316,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Configure CORS if needed for development
     - _Requirements: 7.1, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
 
-  - [~]* 13.6 Write unit tests for Fastify server
+  - [ ]* 13.6 Write unit tests for Fastify server
     - Test server starts on configured port
     - Test security headers are applied
     - Test static file serving
@@ -334,7 +334,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Log server URL and startup information
     - _Requirements: 9.2, 9.5_
 
-  - [~]* 13.8 Write unit tests for manager entry point
+  - [ ]* 13.8 Write unit tests for manager entry point
     - Test server initialization with valid config
     - Test error handling for port conflicts
     - Test graceful shutdown
@@ -344,7 +344,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 15. Phase 8: Operational Hardening and Polish
-  - [-] 15.1 Implement schema versioning
+  - [x] 15.1 Implement schema versioning
     - Add schema version to all ChromaDB collection metadata
     - Implement schema version checking on startup
     - Log warnings for version mismatches with migration instructions
@@ -357,7 +357,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - **Property 32: Schema Version Validation** - For any existing collection, system should check version on startup and log warning if mismatch
     - **Validates: Requirements 13.1, 13.2, 13.3**
 
-  - [~] 15.3 Add comprehensive error handling review
+  - [x] 15.3 Add comprehensive error handling review
     - Review all components for error handling completeness
     - Ensure all errors are logged with context (component, operation, stack trace)
     - Verify parsing errors don't stop ingestion
@@ -367,7 +367,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Add error recovery strategies where appropriate
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
-  - [~] 15.4 Optimize performance
+  - [x] 15.4 Optimize performance
     - Verify embedding model is cached in memory
     - Verify search results are cached for 60 seconds
     - Verify batch processing uses configured batch size
@@ -376,7 +376,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Profile and optimize hot paths if needed
     - _Requirements: 12.1, 12.2, 12.3, 12.4_
 
-  - [~] 15.5 Create comprehensive README
+  - [x] 15.5 Create comprehensive README
     - Document installation instructions (npm install -g)
     - Document usage for all three entry points (mcp-server, ingest, manager)
     - Document configuration options with examples
@@ -388,7 +388,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Add contributing guidelines
     - _Requirements: 9.1_
 
-  - [~] 15.6 Create example configuration file
+  - [x] 15.6 Create example configuration file
     - Create config.example.json with all options documented
     - Include inline comments explaining each configuration value
     - Document default values for each option
@@ -396,7 +396,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Create .env.example with environment variable examples
     - _Requirements: 10.1, 10.2_
 
-  - [~] 15.7 Add integration tests
+  - [x] 15.7 Add integration tests
     - Test complete ingestion workflow (scan → parse → embed → store → verify)
     - Test complete search workflow (ingest → query → embed → search → format → verify)
     - Test MCP client interaction (call all tools → verify responses)
@@ -405,7 +405,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Test re-ingestion workflow (ingest → re-ingest → verify cleanup)
     - _Requirements: 9.2, 9.3, 9.4, 9.5_
 
-  - [~] 15.8 Add package.json scripts and finalize metadata
+  - [x] 15.8 Add package.json scripts and finalize metadata
     - Verify build script compiles TypeScript correctly
     - Verify test script runs with coverage reporting
     - Verify lint script catches code quality issues
@@ -415,7 +415,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Add prepublishOnly script for safety
     - _Requirements: 9.1, 9.2, 9.6_
 
-- [~] 16. Final checkpoint - Complete system verification
+- [ ] 16. Final checkpoint - Complete system verification
   - Run full test suite with coverage (target 80%+)
   - Test all three entry points manually
   - Verify MCP integration with Claude Desktop
