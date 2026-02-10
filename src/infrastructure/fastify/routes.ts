@@ -6,12 +6,16 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { CodebaseService } from '../../domains/codebase/codebase.service.js';
 import type { SearchService } from '../../domains/search/search.service.js';
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import AjvModule from 'ajv';
+import addFormatsModule from 'ajv-formats';
 import { createLogger } from '../../shared/logging/index.js';
 
 const rootLogger = createLogger('info');
 const logger = rootLogger.child('FastifyRoutes');
+
+// Get the constructors - handle both ESM and CJS
+const Ajv = (AjvModule as any).default || AjvModule;
+const addFormats = (addFormatsModule as any).default || addFormatsModule;
 
 // Initialize AJV for schema validation
 const ajv = new Ajv({ allErrors: true });

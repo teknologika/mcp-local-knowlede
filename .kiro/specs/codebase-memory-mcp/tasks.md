@@ -270,7 +270,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 13. Phase 7: Fastify Manager UI and API
-  - [-] 13.1 Implement HTTP API endpoints
+  - [x] 13.1 Implement HTTP API endpoints
     - Create GET /api/codebases endpoint returning all codebases with metadata
     - Create POST /api/search endpoint with query and filter parameters
     - Create GET /api/codebases/:name/stats endpoint for detailed statistics
@@ -283,18 +283,18 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Add request logging for all endpoints
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 11.4_
 
-  - [ ]* 13.2 Write property tests for HTTP API
+  - [~]* 13.2 Write property tests for HTTP API
     - **Property 20: API Error Response Format** - For any API error, response should include appropriate HTTP status and JSON error with code/message
     - **Validates: Requirements 8.6, 11.4**
 
-  - [ ]* 13.3 Write unit tests for API endpoints
+  - [~]* 13.3 Write unit tests for API endpoints
     - Test each endpoint with valid inputs
     - Test each endpoint with invalid inputs
     - Test 404 responses for non-existent resources
     - Test error handling for service failures
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
 
-  - [~] 13.4 Create single-page manager UI
+  - [x] 13.4 Create single-page manager UI
     - Build HTML page with embedded CSS and JavaScript
     - Display list of all codebases with statistics in a table
     - Add codebase selection to show detailed statistics (language distribution, chunk types)
@@ -306,7 +306,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Add error handling and user feedback for all operations
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6_
 
-  - [~] 13.5 Implement Fastify server
+  - [x] 13.5 Implement Fastify server
     - Create Fastify server with configurable port (default 8008) and host
     - Register @fastify/helmet for security headers
     - Serve static UI from /ui/manager directory
@@ -316,7 +316,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Configure CORS if needed for development
     - _Requirements: 7.1, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
 
-  - [ ]* 13.6 Write unit tests for Fastify server
+  - [~]* 13.6 Write unit tests for Fastify server
     - Test server starts on configured port
     - Test security headers are applied
     - Test static file serving
@@ -324,7 +324,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Test global error handler
     - _Requirements: 7.1_
 
-  - [~] 13.7 Create manager entry point
+  - [x] 13.7 Create manager entry point
     - Implement manager executable that starts Fastify server
     - Load configuration from environment and config file
     - Initialize all services (ChromaDB, codebase, search)
@@ -334,17 +334,17 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Log server URL and startup information
     - _Requirements: 9.2, 9.5_
 
-  - [ ]* 13.8 Write unit tests for manager entry point
+  - [~]* 13.8 Write unit tests for manager entry point
     - Test server initialization with valid config
     - Test error handling for port conflicts
     - Test graceful shutdown
     - _Requirements: 9.5_
 
-- [~] 14. Checkpoint - Verify manager UI and API
+- [x] 14. Checkpoint - Verify manager UI and API
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 15. Phase 8: Operational Hardening and Polish
-  - [~] 15.1 Implement schema versioning
+  - [-] 15.1 Implement schema versioning
     - Add schema version to all ChromaDB collection metadata
     - Implement schema version checking on startup
     - Log warnings for version mismatches with migration instructions

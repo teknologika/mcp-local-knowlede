@@ -36,6 +36,7 @@
   "license": "MIT",
   "dependencies": {
     "@fastify/helmet": "^11.1.0",
+    "@fastify/static": "^9.0.0",
     "@huggingface/transformers": "^3.8.1",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "ajv": "^8.12.0",
