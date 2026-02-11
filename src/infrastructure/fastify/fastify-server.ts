@@ -61,10 +61,10 @@ export class FastifyServer {
     this.ingestionService = ingestionService;
     this.config = config;
 
-    // Create Fastify instance with Pino logger
+    // Create Fastify instance with Pino logger at warn level to reduce noise
     this.fastify = Fastify({
       logger: {
-        level: config.logging.level,
+        level: 'warn',
         serializers: {
           req: (req) => ({
             method: req.method,
@@ -205,7 +205,24 @@ export class FastifyServer {
       };
     });
 
-    logger.info('Fastify server configured', { staticPath, templatesPath });
+    // Shutdown endpoint
+    this.fastify.post('/api/shutdown', async (_request, reply) => {
+      // Send response before shutting down
+      reply.send({ success: true, message: 'Server shutting down...' });
+      
+      // Shutdown gracefully after a short delay to allow response to be sent
+      setTimeout(async () => {
+        console.log('Manager UI server is stopping');
+        try {
+          await this.fastify.close();
+        } catch (error) {
+          // Ignore close errors
+        }
+        process.exit(0);
+      }, 500);
+    });
+
+    logger.debug('Fastify server configured', { staticPath, templatesPath });
   }
 
   /**

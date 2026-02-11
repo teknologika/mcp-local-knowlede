@@ -142,6 +142,7 @@ export function createLogger(level: LogLevel = 'info', pretty: boolean = false):
             colorize: true,
             translateTime: 'SYS:standard',
             ignore: 'pid,hostname',
+            destination: 2, // Write to stderr (fd 2)
           },
         }
       : undefined,
@@ -158,7 +159,7 @@ export function createLogger(level: LogLevel = 'info', pretty: boolean = false):
     },
     // Include timestamp in ISO 8601 format
     timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
-  });
+  }, pino.destination({ dest: 2, sync: false })); // Write to stderr (fd 2)
 
   return new PinoLoggerWrapper(pinoLogger);
 }

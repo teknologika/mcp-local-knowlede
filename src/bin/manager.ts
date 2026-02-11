@@ -70,43 +70,46 @@ async function openBrowser(url: string): Promise<void> {
  * Main function to start the Manager UI server
  */
 async function main() {
-  // Initialize logger early with default level
-  let logger = createLogger('info');
+  // Initialize logger with 'warn' level to reduce noise
+  let logger = createLogger('warn');
   let mainLogger = logger.child('main');
 
   try {
     // Load configuration
     const config = loadConfig(configPath);
 
+    // Override log level to 'warn' for manager to reduce noise
+    config.logging.level = 'warn';
+
     // Re-initialize logger with configured level
     logger = createLogger(config.logging.level);
     mainLogger = logger.child('main');
 
-    mainLogger.info('Initializing Manager UI server', {
+    mainLogger.debug('Initializing Manager UI server', {
       configPath: configPath || 'default',
       schemaVersion: config.schemaVersion,
     });
 
     // Initialize LanceDB client
-    mainLogger.info('Initializing LanceDB client', {
+    mainLogger.debug('Initializing LanceDB client', {
       persistPath: config.lancedb.persistPath,
     });
     const lanceClient = new LanceDBClientWrapper(config);
     await lanceClient.initialize();
 
     // Initialize embedding service
-    mainLogger.info('Initializing embedding service', {
+    mainLogger.debug('Initializing embedding service', {
       modelName: config.embedding.modelName,
     });
     const embeddingService = new HuggingFaceEmbeddingService(config, logger);
     await embeddingService.initialize();
 
     // Initialize codebase service
-    mainLogger.info('Initializing codebase service');
+    mainLogger.debug('Initializing codebase service');
     const codebaseService = new CodebaseService(lanceClient, config);
 
     // Initialize search service
-    mainLogger.info('Initializing search service');
+    mainLogger.debug('Initializing search service');
     const searchService = new SearchService(
       lanceClient,
       embeddingService,
@@ -114,7 +117,7 @@ async function main() {
     );
 
     // Initialize ingestion service
-    mainLogger.info('Initializing ingestion service');
+    mainLogger.debug('Initializing ingestion service');
     const ingestionService = new IngestionService(
       embeddingService,
       lanceClient,

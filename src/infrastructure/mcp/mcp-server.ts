@@ -18,7 +18,6 @@ import AjvModule, { type ValidateFunction } from 'ajv';
 import addFormatsModule from 'ajv-formats';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
-import { createLogger } from '../../shared/logging/index.js';
 import type { Config } from '../../shared/types/index.js';
 import type { CodebaseService } from '../../domains/codebase/codebase.service.js';
 import type { SearchService } from '../../domains/search/search.service.js';
@@ -32,8 +31,14 @@ import {
   type GetCodebaseStatsInput,
 } from './tool-schemas.js';
 
-const rootLogger = createLogger('info');
-const logger = rootLogger.child('MCPServer');
+// Silent logger for MCP server - no logging to avoid interfering with stdio JSON-RPC
+const silentLogger = {
+  debug: () => {},
+  info: () => {},
+  warn: () => {},
+  error: () => {},
+  child: () => silentLogger,
+} as any;
 
 const execAsync = promisify(exec);
 
@@ -96,8 +101,6 @@ export class MCPServer {
   private setupHandlers(): void {
     // List tools handler
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      logger.info('Listing available tools');
-
       const tools: Tool[] = ALL_TOOL_SCHEMAS.map((schema) => ({
         name: schema.name,
         description: schema.description,
@@ -111,8 +114,6 @@ export class MCPServer {
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const toolName = request.params.name;
       const args = request.params.arguments || {};
-
-      logger.info('Tool call received', { toolName, args });
 
       try {
         // Route to appropriate tool handler
@@ -132,12 +133,6 @@ export class MCPServer {
             );
         }
       } catch (error) {
-        logger.error(
-          'Tool call failed',
-          error instanceof Error ? error : new Error(String(error)),
-          { toolName }
-        );
-
         // If it's already an MCP error, rethrow it
         if (this.isMCPError(error)) {
           throw error;
@@ -247,6 +242,17 @@ export class MCPServer {
     const url = `http://${this.config.server.host}:${this.config.server.port}`;
 
     try {
+      // Check if manager server is already running
+      const isRunning = await this.checkServerRunning(url);
+      
+      if (!isRunning) {
+        // Launch the manager server in the background
+        await this.launchManagerServer();
+        
+        // Wait a moment for the server to start
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
       // Launch browser
       await this.openBrowser(url);
 
@@ -259,6 +265,7 @@ export class MCPServer {
               {
                 url,
                 message: `Opening codebase manager at ${url}`,
+                serverStarted: !isRunning,
               },
               null,
               2
@@ -267,10 +274,6 @@ export class MCPServer {
         ],
       };
     } catch (error) {
-      logger.warn('Failed to open browser', {
-        error: error instanceof Error ? error.message : String(error),
-      });
-
       // Still return success with URL
       return {
         content: [
@@ -280,6 +283,7 @@ export class MCPServer {
               {
                 url,
                 message: `Codebase manager is available at ${url} (failed to open browser automatically)`,
+                error: error instanceof Error ? error.message : String(error),
               },
               null,
               2
@@ -288,6 +292,38 @@ export class MCPServer {
         ],
       };
     }
+  }
+
+  /**
+   * Check if the manager server is running
+   */
+  private async checkServerRunning(url: string): Promise<boolean> {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Launch the manager server in the background
+   */
+  private async launchManagerServer(): Promise<void> {
+    const { spawn } = await import('node:child_process');
+    
+    // Find the manager command
+    const managerCommand = 'mcp-codebase-manager';
+    
+    // Spawn the manager server as a detached background process
+    const child = spawn(managerCommand, [], {
+      detached: true,
+      stdio: 'ignore',
+      shell: true,
+    });
+    
+    // Unref so the parent process can exit independently
+    child.unref();
   }
 
   /**
@@ -364,12 +400,8 @@ export class MCPServer {
    * Start the MCP server with stdio transport
    */
   async start(): Promise<void> {
-    logger.info('Starting MCP server with stdio transport');
-
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-
-    logger.info('MCP server started successfully');
 
     // Keep the process alive by returning a promise that never resolves
     // The stdio transport will handle communication via stdin/stdout
@@ -384,8 +416,6 @@ export class MCPServer {
    * Stop the MCP server
    */
   async stop(): Promise<void> {
-    logger.info('Stopping MCP server');
     await this.server.close();
-    logger.info('MCP server stopped');
   }
 }

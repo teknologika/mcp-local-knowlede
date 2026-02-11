@@ -14,7 +14,6 @@
  */
 
 import { loadConfig } from '../shared/config/index.js';
-import { createLogger } from '../shared/logging/index.js';
 import { LanceDBClientWrapper } from '../infrastructure/lancedb/lancedb.client.js';
 import { HuggingFaceEmbeddingService } from '../domains/embedding/index.js';
 import { CodebaseService } from '../domains/codebase/codebase.service.js';
@@ -41,52 +40,39 @@ if (!configPath && process.env.CONFIG_PATH) {
  * Main function to start the MCP server
  */
 async function main() {
-  // Initialize logger early with default level
-  let logger = createLogger('info');
-  let mainLogger = logger.child('main');
+  // For MCP stdio mode, disable ALL logging to avoid interfering with JSON-RPC
+  // MCP protocol requires stdout to be ONLY JSON-RPC messages
+  // Create a silent logger that does nothing
+  const silentLogger = {
+    debug: () => {},
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+    child: () => silentLogger,
+  } as any;
 
   try {
     // Load configuration
     const config = loadConfig(configPath);
 
-    // Re-initialize logger with configured level
-    logger = createLogger(config.logging.level);
-    mainLogger = logger.child('main');
-
-    mainLogger.info('Initializing MCP server', {
-      configPath: configPath || 'default',
-      schemaVersion: config.schemaVersion,
-    });
-
     // Initialize LanceDB client (non-blocking - will create directory if needed)
-    mainLogger.info('Creating LanceDB client', {
-      persistPath: config.lancedb.persistPath,
-    });
-    const lanceClient = new LanceDBClientWrapper(config);
+    const lanceClient = new LanceDBClientWrapper(config, silentLogger);
     
     // Try to initialize, but don't fail if LanceDB isn't available yet
     try {
       await lanceClient.initialize();
     } catch (error) {
-      mainLogger.warn('LanceDB initialization failed, will retry on first use', {
-        error: error instanceof Error ? error.message : String(error),
-      });
       // Don't exit - let the server start and LanceDB will initialize on first use
     }
 
     // Initialize embedding service (lazy - will initialize on first use)
-    mainLogger.info('Creating embedding service', {
-      modelName: config.embedding.modelName,
-    });
-    const embeddingService = new HuggingFaceEmbeddingService(config, logger);
+    const embeddingService = new HuggingFaceEmbeddingService(config, silentLogger);
     // Don't initialize yet - let it initialize on first use to avoid blocking startup
 
     // Initialize codebase service
-    mainLogger.info('Initializing codebase service');
     const codebaseService = new CodebaseService(lanceClient, config);
 
     // Initialize search service
-    mainLogger.info('Initializing search service');
     const searchService = new SearchService(
       lanceClient,
       embeddingService,
@@ -97,16 +83,13 @@ async function main() {
     const mcpServer = new MCPServer(codebaseService, searchService, config);
 
     // Setup graceful shutdown
-    const shutdown = async (signal: string) => {
-      mainLogger.info('Received shutdown signal', { signal });
+    const shutdown = async (_signal: string) => {
       try {
         await mcpServer.stop();
         process.exit(0);
       } catch (error) {
-        mainLogger.error(
-          'Error during shutdown',
-          error instanceof Error ? error : new Error(String(error))
-        );
+        // Only write critical errors to stderr
+        console.error('Error during shutdown:', error);
         process.exit(1);
       }
     };
@@ -117,17 +100,11 @@ async function main() {
     // Start the server
     await mcpServer.start();
 
-    mainLogger.info('MCP server is running and ready to accept requests');
-
     // Keep the process alive - stdio transport will handle communication
     // Process will exit on SIGINT/SIGTERM or when client closes connection
   } catch (error) {
-    const errorLogger = logger.child('main');
-    errorLogger.error(
-      'Failed to start MCP server',
-      error instanceof Error ? error : new Error(String(error))
-    );
-
+    // Only write critical errors to stderr
+    console.error('Failed to start MCP server:', error);
     process.exit(1);
   }
 }

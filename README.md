@@ -12,26 +12,18 @@
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
-  - [Ingestion CLI](#ingestion-cli)
-  - [MCP Server](#mcp-server)
-  - [Manager UI](#manager-ui)
 - [Configuration](#configuration)
 - [MCP Client Configuration](#mcp-client-configuration)
 - [Supported Languages](#supported-languages)
-- [Search Query Examples](#search-query-examples)
 - [Architecture](#architecture)
 - [Troubleshooting](#troubleshooting)
-
-- [Schema Versioning](#schema-versioning)
-- [Performance](#performance)
-- [Security](#security)
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Overview
 
-The Codebase Memory MCP Server enables LLM coding assistants to reliably discover existing code in a codebase, preventing duplicate implementations and wrong-file edits. It uses local embeddings, Tree-sitter-aware chunking, and ChromaDB for vector storage, ensuring all operations run locally without cloud dependencies.
+The Codebase Memory MCP Server enables LLM coding assistants to reliably discover existing code in a codebase, preventing duplicate implementations and wrong-file edits. It uses local embeddings, Tree-sitter-aware chunking, and LanceDB for vector storage, ensuring all operations run locally without cloud dependencies.
 
 ### Why Use This?
 
@@ -40,6 +32,7 @@ The Codebase Memory MCP Server enables LLM coding assistants to reliably discove
 - **Privacy-First**: All processing happens locally—your code never leaves your machine
 - **Fast & Efficient**: Optimized for quick search responses with intelligent caching
 - **Multi-Language**: Support for C#, Java, JavaScript, TypeScript, and Python
+- **Smart Filtering**: Exclude test files and library code from search results
 
 ## Features
 
@@ -47,10 +40,13 @@ The Codebase Memory MCP Server enables LLM coding assistants to reliably discove
 - 🔍 **Semantic Search**: Find code by meaning, not just keywords
 - 🌳 **Tree-sitter Parsing**: AST-aware code chunking for meaningful results
 - 🤖 **MCP Integration**: Seamless integration with MCP-compatible AI assistants (Claude Desktop, etc.)
-- 🌐 **Multi-Language Support**: C#, Java (JDK22+), JavaScript, TypeScript, Python
+- 🌐 **Multi-Language Support**: C#, Java, JavaScript, TypeScript, Python
 - 🖥️ **Web Management UI**: Manage indexed codebases through a web interface
 - ⚡ **Performance Optimized**: Sub-500ms search responses with intelligent caching
+- 🎯 **Smart Filtering**: Exclude test files and library code from results
 - 📊 **Detailed Statistics**: Track chunk counts, file counts, and language distribution
+- 🔄 **Gitignore Support**: Respects .gitignore patterns during ingestion
+
 
 ## Installation
 
@@ -60,7 +56,10 @@ The Codebase Memory MCP Server enables LLM coding assistants to reliably discove
 npm install -g @teknologika/mcp-codebase-search
 ```
 
-This makes the `mcp-server`, `ingest`, and `manager` commands available globally.
+This makes three commands available globally:
+- `mcp-codebase-search` - MCP server for AI assistants
+- `mcp-codebase-ingest` - CLI for indexing codebases
+- `mcp-codebase-manager` - Web UI for management
 
 ### Local Installation
 
@@ -70,9 +69,9 @@ npm install @teknologika/mcp-codebase-search
 
 Then use with `npx`:
 ```bash
-npx ingest --path ./my-project --name my-project
-npx mcp-server
-npx manager
+npx mcp-codebase-ingest --path ./my-project --name my-project
+npx mcp-codebase-search
+npx mcp-codebase-manager
 ```
 
 ### Requirements
@@ -86,7 +85,7 @@ npx manager
 ### 1. Index Your First Codebase
 
 ```bash
-ingest --path ./my-project --name my-project
+mcp-codebase-ingest --path ./my-project --name my-project
 ```
 
 **Example Output:**
@@ -94,9 +93,10 @@ ingest --path ./my-project --name my-project
 Ingesting codebase: my-project
 Path: /Users/dev/projects/my-project
 
-Scanning files: [████████████████████] 100% (1,234/1,234)
-Parsing code: [████████████████████] 100% (1,100/1,100)
+Scanning directory: [████████████████████] 100% (1,234/1,234)
+Parsing files: [████████████████████] 100% (1,100/1,100)
 Generating embeddings: [████████████████████] 100% (5,678/5,678)
+Storing chunks: [████████████████████] 100% (5,678/5,678)
 
 ✓ Ingestion completed successfully!
 
@@ -123,24 +123,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 {
   "mcpServers": {
     "codebase-search": {
-      "command": "mcp-server",
+      "command": "mcp-codebase-search",
       "args": []
-    }
-  }
-}
-```
-
-#### For Other MCP Clients
-
-```json
-{
-  "mcpServers": {
-    "codebase-search": {
-      "command": "mcp-server",
-      "args": [],
-      "env": {
-        "CONFIG_PATH": "~/.codebase-memory/config.json"
-      }
     }
   }
 }
@@ -153,26 +137,31 @@ Once configured, your AI assistant can use these tools:
 - **list_codebases**: See all indexed codebases
 - **search_codebases**: Search for code semantically
 - **get_codebase_stats**: View detailed statistics
-- **open_codebase_manager**: Open the web UI
+- **open_codebase_manager**: Launch and open the Manager UI in your browser
 
 ### 4. (Optional) Explore the Manager UI
 
 ```bash
-manager
+mcp-codebase-manager
 ```
 
-Opens `http://localhost:8008` in your default browser with a visual interface for managing codebases.
+Opens `http://localhost:8008` in your default browser with a visual interface for:
+- Searching codebases with filters
+- Managing indexed codebases
+- Viewing statistics and metadata
+- Adding new codebases with real-time progress
+
 
 ## Usage
 
 ### Ingestion CLI
 
-The `ingest` command indexes a codebase for semantic search.
+The `mcp-codebase-ingest` command indexes a codebase for semantic search.
 
 #### Basic Usage
 
 ```bash
-ingest --path <directory> --name <codebase-name>
+mcp-codebase-ingest --path <directory> --name <codebase-name>
 ```
 
 #### Options
@@ -182,23 +171,29 @@ ingest --path <directory> --name <codebase-name>
 | `-p, --path` | Path to codebase directory | Yes | `--path ./my-project` |
 | `-n, --name` | Unique name for the codebase | Yes | `--name my-project` |
 | `-c, --config` | Path to configuration file | No | `--config ./config.json` |
+| `--no-gitignore` | Disable .gitignore filtering | No | `--no-gitignore` |
 
 #### Examples
 
 **Index a local project:**
 ```bash
-ingest --path ~/projects/my-app --name my-app
+mcp-codebase-ingest --path ~/projects/my-app --name my-app
 ```
 
 **Index with custom config:**
 ```bash
-ingest --path ./backend --name backend-api --config ./custom-config.json
+mcp-codebase-ingest --path ./backend --name backend-api --config ./custom-config.json
+```
+
+**Index without gitignore filtering:**
+```bash
+mcp-codebase-ingest --path ./my-project --name my-project --no-gitignore
 ```
 
 **Re-index an existing codebase:**
 ```bash
 # Simply run the same command again - old data is automatically replaced
-ingest --path ~/projects/my-app --name my-app
+mcp-codebase-ingest --path ~/projects/my-app --name my-app
 ```
 
 #### What Gets Indexed?
@@ -206,9 +201,11 @@ ingest --path ~/projects/my-app --name my-app
 - ✅ All files with supported extensions (`.cs`, `.java`, `.js`, `.jsx`, `.ts`, `.tsx`, `.py`)
 - ✅ Files in nested subdirectories (recursive scanning)
 - ✅ Semantic code chunks (functions, classes, methods, interfaces)
+- ✅ Metadata tags (test files, library files)
 - ❌ Files larger than 1MB (configurable via `maxFileSize`)
-- ❌ Files in `.gitignore` (respects ignore patterns)
+- ❌ Files in `.gitignore` (by default, use `--no-gitignore` to include)
 - ❌ Binary files and unsupported formats
+- ❌ Hidden directories (starting with `.`)
 
 ### MCP Server
 
@@ -217,7 +214,7 @@ The MCP server exposes tools for AI assistants to search and explore codebases.
 #### Starting the Server
 
 ```bash
-mcp-server
+mcp-codebase-search
 ```
 
 The server runs in stdio mode and communicates with MCP clients via standard input/output.
@@ -314,17 +311,21 @@ Retrieves detailed statistics for a specific codebase.
 
 ##### 4. `open_codebase_manager`
 
-Opens the web-based manager UI in the default browser.
+Opens the web-based Manager UI in the default browser. Automatically launches the server if it's not already running.
 
 **Input:** None
 
 **Output:**
 ```json
 {
+  "success": true,
   "url": "http://localhost:8008",
-  "message": "Manager UI opened in default browser"
+  "serverStarted": true,
+  "message": "Manager UI opened in browser. Server was started."
 }
 ```
+
+**Note:** The tool checks if the Manager server is running on the configured port. If not, it launches the server in the background before opening the browser.
 
 ### Manager UI
 
@@ -333,7 +334,7 @@ The Manager UI provides a web-based interface for managing indexed codebases.
 #### Starting the Manager
 
 ```bash
-manager
+mcp-codebase-manager
 ```
 
 This will:
@@ -343,61 +344,38 @@ This will:
 
 #### Features
 
-- **View Codebases**: See all indexed codebases with chunk counts, file counts, and languages
-- **Detailed Statistics**: Click on a codebase to view detailed language distribution and chunk types
-- **Rename Codebases**: Update codebase names while preserving all indexed data
-- **Delete Codebases**: Remove codebases and all associated chunks
-- **Manage Chunk Sets**: Delete specific ingestion runs while keeping others
+**Search Tab:**
+- Semantic search across all codebases
+- Filter by codebase and max results
+- Exclude test files checkbox
+- Exclude library files checkbox
+- Collapsible results with color-coded confidence scores:
+  - 🟢 Green (0.80-1.00): Excellent match
+  - 🟡 Yellow (0.60-0.79): Good match
+  - 🔵 Blue (0.00-0.59): Lower match
 
-#### HTTP API Endpoints
+**Manage Codebases Tab:**
+- View all indexed codebases
+- See chunk counts, file counts, and last indexed date
+- Add new codebases with real-time progress tracking
+- Rename codebases
+- Remove codebases
+- Gitignore filtering checkbox (checked by default)
 
-The Manager UI also exposes a REST API:
+**Manager Controls:**
+- Quit Manager button with confirmation dialog (stops server and closes browser tab)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/codebases` | List all codebases |
-| POST | `/api/search` | Search across codebases |
-| GET | `/api/codebases/:name/stats` | Get codebase statistics |
-| PUT | `/api/codebases/:name` | Rename a codebase |
-| DELETE | `/api/codebases/:name` | Delete a codebase |
-| DELETE | `/api/codebases/:name/chunk-sets/:timestamp` | Delete a chunk set |
 
 ## Configuration
 
-The system can be configured using a JSON configuration file or environment variables. For detailed information about all configuration options, see **[CONFIG.md](CONFIG.md)**.
-
-### Quick Start
-
-#### Using Configuration File
-
-1. **Copy the example configuration:**
-   ```bash
-   cp config.example.json ~/.codebase-memory/config.json
-   ```
-
-2. **Edit the configuration** to customize settings for your environment
-
-3. **Restart services** for changes to take effect
-
-#### Using Environment Variables
-
-1. **Copy the example environment file:**
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Edit `.env`** to set your values
-
-3. **Source the file** or restart your shell
+The system can be configured using a JSON configuration file. The default location is `~/.codebase-memory/config.json`.
 
 ### Configuration File Example
 
-See `config.example.json` for a complete example:
-
 ```json
 {
-  "chromadb": {
-    "persistPath": "~/.codebase-memory/chromadb"
+  "lancedb": {
+    "persistPath": "~/.codebase-memory/lancedb"
   },
   "embedding": {
     "modelName": "Xenova/all-MiniLM-L6-v2",
@@ -405,7 +383,11 @@ See `config.example.json` for a complete example:
   },
   "server": {
     "port": 8008,
-    "host": "localhost"
+    "host": "localhost",
+    "sessionSecret": "change-me-in-production"
+  },
+  "mcp": {
+    "transport": "stdio"
   },
   "ingestion": {
     "batchSize": 100,
@@ -417,19 +399,18 @@ See `config.example.json` for a complete example:
   },
   "logging": {
     "level": "info"
-  }
+  },
+  "schemaVersion": "1.0.0"
 }
 ```
 
-**For detailed documentation of each option, see [CONFIG.md](CONFIG.md)**
-
 ### Configuration Options
 
-#### ChromaDB Settings
+#### LanceDB Settings
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `persistPath` | Directory for ChromaDB storage | `~/.codebase-memory/chromadb` |
+| `persistPath` | Directory for LanceDB storage | `~/.codebase-memory/lancedb` |
 
 #### Embedding Settings
 
@@ -444,6 +425,7 @@ See `config.example.json` for a complete example:
 |--------|-------------|---------|
 | `port` | Port for Manager UI server | `8008` |
 | `host` | Host for Manager UI server | `localhost` |
+| `sessionSecret` | Secret for session cookies | Auto-generated |
 
 #### Ingestion Settings
 
@@ -465,32 +447,16 @@ See `config.example.json` for a complete example:
 |--------|-------------|---------|---------|
 | `level` | Log level | `info` | `debug`, `info`, `warn`, `error` |
 
-### Environment Variables
+### Custom Configuration
 
-You can also configure via environment variables (see `.env.example`):
+To use a custom configuration file:
 
 ```bash
-# ChromaDB
-CHROMADB_PERSIST_PATH=~/.codebase-memory/chromadb
+# For ingestion
+mcp-codebase-ingest --config ./my-config.json --path ./code --name my-code
 
-# Embedding
-EMBEDDING_MODEL_NAME=Xenova/all-MiniLM-L6-v2
-EMBEDDING_CACHE_PATH=~/.codebase-memory/models
-
-# Server
-SERVER_PORT=8008
-SERVER_HOST=localhost
-
-# Ingestion
-INGESTION_BATCH_SIZE=100
-INGESTION_MAX_FILE_SIZE=1048576
-
-# Search
-SEARCH_DEFAULT_MAX_RESULTS=50
-SEARCH_CACHE_TIMEOUT_SECONDS=60
-
-# Logging
-LOG_LEVEL=info
+# For MCP server (via environment variable)
+CONFIG_PATH=./my-config.json mcp-codebase-search
 ```
 
 ## MCP Client Configuration
@@ -507,7 +473,7 @@ LOG_LEVEL=info
 {
   "mcpServers": {
     "codebase-search": {
-      "command": "mcp-server",
+      "command": "mcp-codebase-search",
       "args": []
     }
   }
@@ -522,7 +488,7 @@ For other MCP-compatible clients, use the stdio transport:
 {
   "mcpServers": {
     "codebase-search": {
-      "command": "mcp-server",
+      "command": "mcp-codebase-search",
       "args": [],
       "env": {
         "CONFIG_PATH": "~/.codebase-memory/config.json",
@@ -564,87 +530,19 @@ For each supported language, the system extracts:
 - **Properties**: Class properties (C#)
 - **Fields**: Class fields (Java)
 
-### Unsupported Files
+### File Classification
 
-Files with unsupported extensions are skipped during ingestion and logged:
+The system automatically classifies files during ingestion:
 
-```
-Unsupported files by extension:
-  .md: 50 files
-  .json: 40 files
-  .xml: 44 files
-```
+**Test Files** (tagged with `isTestFile: true`):
+- Files ending in `.test.ts`, `.spec.ts`, `_test.py`, etc.
+- Files in `__tests__/`, `test/`, `tests/`, `spec/` directories
 
-## Search Query Examples
+**Library Files** (tagged with `isLibraryFile: true`):
+- Files in `node_modules/`, `vendor/`, `dist/`, `build/`, `venv/`, etc.
 
-### Basic Queries
+These tags enable filtering in search results.
 
-**Find authentication code:**
-```json
-{
-  "query": "user authentication"
-}
-```
-
-**Find database queries:**
-```json
-{
-  "query": "database query execution"
-}
-```
-
-**Find error handling:**
-```json
-{
-  "query": "error handling and logging"
-}
-```
-
-### Filtered Queries
-
-**Search in specific codebase:**
-```json
-{
-  "query": "API endpoint handler",
-  "codebaseName": "backend-api"
-}
-```
-
-**Search specific language:**
-```json
-{
-  "query": "data validation",
-  "language": "typescript"
-}
-```
-
-**Limit results:**
-```json
-{
-  "query": "utility functions",
-  "maxResults": 10
-}
-```
-
-### Advanced Queries
-
-**Combine filters:**
-```json
-{
-  "query": "authentication middleware",
-  "codebaseName": "web-app",
-  "language": "typescript",
-  "maxResults": 20
-}
-```
-
-### Query Tips
-
-- ✅ **Use natural language**: "user authentication function" works better than "auth"
-- ✅ **Be specific**: "JWT token validation" is better than "validation"
-- ✅ **Include context**: "database connection pooling" vs "connection"
-- ❌ **Avoid single words**: "user" is too broad
-- ❌ **Don't use code syntax**: Use "function that validates email" not "validateEmail()"
 
 ## Architecture
 
@@ -670,35 +568,37 @@ Unsupported files by extension:
 ┌──────▼─────────────▼──────────────▼────────────────▼───────┐
 │                   Storage & External                        │
 ├──────────────┬──────────────────┬─────────────────────────┤
-│   ChromaDB   │  Tree-sitter     │  Hugging Face           │
+│   LanceDB    │  Tree-sitter     │  Hugging Face           │
 │ (Vector DB)  │  (Code Parsing)  │  (Embeddings)           │
 └──────────────┴──────────────────┴─────────────────────────┘
 ```
 
 ### Component Responsibilities
 
-**MCP Server** (`mcp-server`)
+**MCP Server** (`mcp-codebase-search`)
 - Exposes tools via Model Context Protocol
 - Validates inputs and outputs
 - Handles stdio communication
 
-**Ingestion CLI** (`ingest`)
+**Ingestion CLI** (`mcp-codebase-ingest`)
 - Scans directories recursively
+- Respects .gitignore patterns
 - Parses code with Tree-sitter
+- Classifies test and library files
 - Generates embeddings
-- Stores chunks in ChromaDB
+- Stores chunks in LanceDB
 
-**Manager UI** (`manager`)
-- Fastify web server
-- REST API endpoints
-- Single-page web interface
+**Manager UI** (`mcp-codebase-manager`)
+- Fastify web server with SSR
+- Real-time ingestion progress via SSE
+- Search interface with filters
 - Codebase management
 
 **Core Services**
 - **Codebase Service**: CRUD operations for codebases
-- **Search Service**: Semantic search with filtering
+- **Search Service**: Semantic search with filtering and caching
 - **Ingestion Service**: Orchestrates indexing pipeline
-- **Embedding Service**: Generates vector embeddings
+- **Embedding Service**: Generates vector embeddings locally
 
 ### Data Flow
 
@@ -707,7 +607,9 @@ Unsupported files by extension:
 ```
 Source Code → File Scanner → Tree-sitter Parser → Chunks
                                                       ↓
-ChromaDB ← Embeddings ← Embedding Service ← Chunks
+                                            File Classifier
+                                                      ↓
+LanceDB ← Embeddings ← Embedding Service ← Tagged Chunks
 ```
 
 #### Search Flow
@@ -715,33 +617,36 @@ ChromaDB ← Embeddings ← Embedding Service ← Chunks
 ```
 Query → Embedding Service → Vector
                               ↓
-                         ChromaDB Search
+                         LanceDB Search
                               ↓
-                         Ranked Results → Filter → Format → Response
+                         Apply Filters (tests, libraries)
+                              ↓
+                         Ranked Results → Format → Response
 ```
 
 ### Storage Schema
 
-**ChromaDB Collections:**
-- Collection naming: `codebase_{name}_{schemaVersion}`
-- Example: `codebase_my-project_v1_0_0`
+**LanceDB Tables:**
+- Table naming: `codebase_{name}_{schemaVersion}`
+- Example: `codebase_my-project_1_0_0`
 
-**Document Structure:**
+**Row Structure:**
 ```json
 {
-  "id": "uuid",
-  "embedding": [0.1, 0.2, ...],
-  "metadata": {
-    "codebaseName": "my-project",
-    "filePath": "src/auth.ts",
-    "startLine": 15,
-    "endLine": 45,
-    "language": "typescript",
-    "chunkType": "function",
-    "ingestionTimestamp": "2024-01-15T10:30:00Z",
-    "schemaVersion": "1.0.0"
-  },
-  "document": "export async function authenticate(...) { ... }"
+  "id": "my-project_2024-01-15T10:30:00Z_0",
+  "vector": [0.1, 0.2, ...],
+  "content": "export async function authenticate(...) { ... }",
+  "filePath": "src/auth.ts",
+  "startLine": 15,
+  "endLine": 45,
+  "language": "typescript",
+  "chunkType": "function",
+  "isTestFile": false,
+  "isLibraryFile": false,
+  "ingestionTimestamp": "2024-01-15T10:30:00Z",
+  "_codebaseName": "my-project",
+  "_path": "/path/to/project",
+  "_lastIngestion": "2024-01-15T10:30:00Z"
 }
 ```
 
@@ -749,7 +654,7 @@ Query → Embedding Service → Vector
 
 ### Common Issues
 
-#### 1. "Command not found: mcp-server"
+#### 1. "Command not found: mcp-codebase-search"
 
 **Problem:** The package is not installed globally or not in PATH.
 
@@ -759,23 +664,23 @@ Query → Embedding Service → Vector
 npm install -g @teknologika/mcp-codebase-search
 
 # Or use npx
-npx mcp-server
+npx mcp-codebase-search
 ```
 
-#### 2. "Failed to initialize ChromaDB"
+#### 2. "Failed to initialize LanceDB"
 
-**Problem:** ChromaDB persistence directory is not writable or corrupted.
+**Problem:** LanceDB persistence directory is not writable or corrupted.
 
 **Solution:**
 ```bash
 # Check permissions
-ls -la ~/.codebase-memory/chromadb
+ls -la ~/.codebase-memory/lancedb
 
-# Reset ChromaDB (WARNING: deletes all data)
-rm -rf ~/.codebase-memory/chromadb
+# Reset LanceDB (WARNING: deletes all data)
+rm -rf ~/.codebase-memory/lancedb
 
 # Re-ingest codebases
-ingest --path ./my-project --name my-project
+mcp-codebase-ingest --path ./my-project --name my-project
 ```
 
 #### 3. "Embedding model download failed"
@@ -791,7 +696,7 @@ df -h ~/.codebase-memory
 rm -rf ~/.codebase-memory/models
 
 # Run ingestion again (will re-download)
-ingest --path ./my-project --name my-project
+mcp-codebase-ingest --path ./my-project --name my-project
 ```
 
 #### 4. "Search returns no results"
@@ -801,7 +706,7 @@ ingest --path ./my-project --name my-project
 **Solution:**
 ```bash
 # Verify codebase is indexed
-manager
+mcp-codebase-manager
 # Check the UI for your codebase
 
 # Try broader queries
@@ -818,16 +723,13 @@ manager
 # Check what's using port 8008
 lsof -i :8008
 
-# Use a different port
+# Kill the process or use a different port
 # Edit ~/.codebase-memory/config.json
 {
   "server": {
     "port": 8009
   }
 }
-
-# Or set environment variable
-SERVER_PORT=8009 manager
 ```
 
 #### 6. "MCP client can't connect to server"
@@ -837,245 +739,15 @@ SERVER_PORT=8009 manager
 **Solution:**
 ```bash
 # Test server manually
-mcp-server
-
-# Check logs
-DEBUG=1 mcp-server
+mcp-codebase-search
 
 # Verify configuration path
 cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
+
+# Check logs for errors
 ```
 
-### Schema Versioning
-
-The system uses schema versioning to ensure compatibility between the application and stored data in ChromaDB. Each collection includes a schema version in its metadata.
-
-### Current Schema Version
-
-The current schema version is **1.0.0** (defined in `src/shared/config/config.js`).
-
-### Version Checking
-
-On startup, the MCP server and Manager UI automatically check the schema version of all existing collections. If a mismatch is detected, you'll see a warning message like:
-
-```
-⚠️  Schema Version Mismatch Detected
-
-Found 2 collection(s) with incompatible schema versions:
-
-  • Codebase: my-project
-    Collection: codebase_my-project_v1_0_0
-    Collection Version: 0.9.0
-    Current Version: 1.0.0
-
-Migration Instructions:
-  1. Back up your data directory (see README for location)
-  2. Re-ingest affected codebases using the "ingest" command
-  3. Or see README.md for detailed migration steps
-```
-
-### Migration Path
-
-When a schema version mismatch is detected, follow these steps:
-
-#### Option 1: Re-ingestion (Recommended)
-
-The simplest migration path is to re-ingest your codebases:
-
-1. **Back up your data** (optional but recommended):
-   ```bash
-   cp -r ~/.codebase-memory ~/.codebase-memory.backup
-   ```
-
-2. **Delete the old codebase** using the Manager UI or by removing the ChromaDB collection
-
-3. **Re-ingest the codebase**:
-   ```bash
-   ingest --path /path/to/codebase --name my-project
-   ```
-
-#### Option 2: Manual Migration
-
-For advanced users who want to preserve specific data:
-
-1. **Back up your data**:
-   ```bash
-   cp -r ~/.codebase-memory ~/.codebase-memory.backup
-   ```
-
-2. **Export data from old collections** (requires custom script using ChromaDB API)
-
-3. **Transform data** to match new schema (schema changes documented in CHANGELOG)
-
-4. **Import data** into new collections with updated schema version
-
-#### Data Directory Location
-
-By default, data is stored in:
-- **ChromaDB**: `~/.codebase-memory/chromadb`
-- **Embedding Models**: `~/.codebase-memory/models`
-
-You can customize these locations in your configuration file.
-
-### Schema Version History
-
-- **1.0.0** (Current): Initial release schema
-  - Collection naming: `codebase_{name}_{version}`
-  - Metadata fields: `codebaseName`, `schemaVersion`, `createdAt`, `filePath`, `startLine`, `endLine`, `language`, `chunkType`, `ingestionTimestamp`
-
-### Preventing Version Mismatches
-
-To avoid version mismatches:
-
-1. **Keep the package updated**: Run `npm update -g @teknologika/mcp-codebase-search` regularly
-2. **Re-ingest after updates**: After updating the package, re-ingest your codebases
-3. **Use consistent versions**: Ensure all instances (MCP server, Manager UI, Ingestion CLI) use the same package version
-
-### Troubleshooting
-
-**Q: Can I use collections with mismatched versions?**
-
-A: The system will continue to operate, but results may be unpredictable. Re-ingestion is strongly recommended.
-
-**Q: Will my data be lost during migration?**
-
-A: Re-ingestion creates fresh data from your source code. As long as your source code is intact, no data is lost. The original ChromaDB collections can be backed up before deletion.
-
-**Q: How do I check the schema version of a collection?**
-
-A: The schema version is logged on startup. You can also query collection metadata directly using the ChromaDB API or check the Manager UI logs.
-
-### Schema Versioning
-
-The system uses schema versioning to ensure compatibility between the application and stored data in ChromaDB. Each collection includes a schema version in its metadata.
-
-#### Current Schema Version
-
-The current schema version is **1.0.0** (defined in `src/shared/config/config.js`).
-
-#### Version Checking
-
-On startup, the MCP server and Manager UI automatically check the schema version of all existing collections. If a mismatch is detected, you'll see a warning message like:
-
-```
-⚠️  Schema Version Mismatch Detected
-
-Found 2 collection(s) with incompatible schema versions:
-
-  • Codebase: my-project
-    Collection: codebase_my-project_v1_0_0
-    Collection Version: 0.9.0
-    Current Version: 1.0.0
-
-Migration Instructions:
-  1. Back up your data directory (see README for location)
-  2. Re-ingest affected codebases using the "ingest" command
-  3. Or see README.md for detailed migration steps
-```
-
-#### Migration Path
-
-When a schema version mismatch is detected, follow these steps:
-
-**Option 1: Re-ingestion (Recommended)**
-
-The simplest migration path is to re-ingest your codebases:
-
-1. **Back up your data** (optional but recommended):
-   ```bash
-   cp -r ~/.codebase-memory ~/.codebase-memory.backup
-   ```
-
-2. **Delete the old codebase** using the Manager UI or by removing the ChromaDB collection
-
-3. **Re-ingest the codebase**:
-   ```bash
-   ingest --path /path/to/codebase --name my-project
-   ```
-
-**Option 2: Manual Migration**
-
-For advanced users who want to preserve specific data:
-
-1. **Back up your data**:
-   ```bash
-   cp -r ~/.codebase-memory ~/.codebase-memory.backup
-   ```
-
-2. **Export data from old collections** (requires custom script using ChromaDB API)
-
-3. **Transform data** to match new schema (schema changes documented in CHANGELOG)
-
-4. **Import data** into new collections with updated schema version
-
-#### Data Directory Location
-
-By default, data is stored in:
-- **ChromaDB**: `~/.codebase-memory/chromadb`
-- **Embedding Models**: `~/.codebase-memory/models`
-
-You can customize these locations in your configuration file.
-
-#### Schema Version History
-
-- **1.0.0** (Current): Initial release schema
-  - Collection naming: `codebase_{name}_{version}`
-  - Metadata fields: `codebaseName`, `schemaVersion`, `createdAt`, `filePath`, `startLine`, `endLine`, `language`, `chunkType`, `ingestionTimestamp`
-
-#### Preventing Version Mismatches
-
-To avoid version mismatches:
-
-1. **Keep the package updated**: Run `npm update -g @teknologika/mcp-codebase-search` regularly
-2. **Re-ingest after updates**: After updating the package, re-ingest your codebases
-3. **Use consistent versions**: Ensure all instances (MCP server, Manager UI, Ingestion CLI) use the same package version
-
-#### Troubleshooting
-
-**Q: Can I use collections with mismatched versions?**
-
-A: The system will continue to operate, but results may be unpredictable. Re-ingestion is strongly recommended.
-
-**Q: Will my data be lost during migration?**
-
-A: Re-ingestion creates fresh data from your source code. As long as your source code is intact, no data is lost. The original ChromaDB collections can be backed up before deletion.
-
-**Q: How do I check the schema version of a collection?**
-
-A: The schema version is logged on startup. You can also query collection metadata directly using the ChromaDB API or check the Manager UI logs.
-
-## Performance
-
-### Search Performance
-
-- **Target**: Sub-500ms search responses for codebases under 10,000 chunks
-- **Caching**: Identical queries cached for 60 seconds (configurable)
-- **Optimization**: Vector similarity search with metadata filtering
-
-### Ingestion Performance
-
-Typical ingestion speeds (on modern hardware):
-
-| Codebase Size | Files | Chunks | Time |
-|---------------|-------|--------|------|
-| Small | 100-500 | 500-2,000 | 10-30s |
-| Medium | 500-2,000 | 2,000-10,000 | 30-120s |
-| Large | 2,000-10,000 | 10,000-50,000 | 2-10min |
-
-**Factors affecting speed:**
-- File size and complexity
-- Number of semantic chunks per file
-- Embedding model (default: `Xenova/all-MiniLM-L6-v2`)
-- CPU performance
-- Disk I/O speed
-
-### Memory Usage
-
-- **Embedding Model**: ~100MB in memory (cached for process lifetime)
-- **ChromaDB**: Minimal memory footprint (disk-backed)
-- **Batch Processing**: Configurable batch size (default: 100 chunks)
-
-### Optimization Tips
+### Performance Tips
 
 1. **Increase batch size** for faster ingestion (if you have sufficient RAM):
    ```json
@@ -1095,56 +767,10 @@ Typical ingestion speeds (on modern hardware):
    }
    ```
 
-3. **Use SSD storage** for ChromaDB persistence directory
+3. **Use SSD storage** for LanceDB persistence directory
 
-4. **Limit max results** for faster responses:
-   ```json
-   {
-     "search": {
-       "defaultMaxResults": 25
-     }
-   }
-   ```
+4. **Exclude unnecessary files** using .gitignore patterns
 
-## Security
-
-### Local-First Architecture
-
-- ✅ **No external API calls**: All processing happens locally
-- ✅ **No telemetry**: No usage data is collected or transmitted
-- ✅ **No cloud dependencies**: Embeddings generated locally with Hugging Face Transformers
-
-### File System Security
-
-- **Path validation**: All file paths are validated to prevent directory traversal
-- **Permission checks**: Respects file system permissions
-- **Gitignore support**: Automatically skips files in `.gitignore`
-
-### Input Validation
-
-- **Schema validation**: All inputs validated with AJV JSON schemas
-- **Type checking**: Strict TypeScript types throughout
-- **Sanitization**: User inputs sanitized before processing
-
-### Resource Limits
-
-- **Max file size**: 1MB default (configurable)
-- **Max results**: 200 maximum per search
-- **Batch size limits**: Prevents memory exhaustion
-
-### Network Security
-
-- **Localhost only**: Manager UI binds to localhost by default
-- **No authentication**: Designed for local use only (do not expose to network)
-- **Security headers**: Helmet.js for HTTP security headers
-
-### Recommendations
-
-1. **Do not expose Manager UI to public networks**
-2. **Keep the package updated** for security patches
-3. **Run regular security audits**: `npm audit`
-4. **Use strong file system permissions** for data directories
-5. **Back up data regularly** before major updates
 
 ## Development
 
@@ -1180,11 +806,17 @@ npm run test:coverage
 # Lint code
 npm run lint
 
+# Fix linting issues
+npm run lint:fix
+
 # Security audit
 npm run security
 
 # Clean build artifacts
 npm run clean
+
+# Type check without building
+npm run typecheck
 ```
 
 ### Project Structure
@@ -1199,13 +831,14 @@ src/
 │   ├── embedding/         # Embedding generation
 │   └── parsing/           # Tree-sitter code parsing
 ├── infrastructure/         # External integrations
-│   ├── chromadb/          # ChromaDB client wrapper
+│   ├── lancedb/           # LanceDB client wrapper
 │   ├── mcp/               # MCP server implementation
 │   └── fastify/           # Fastify server and routes
 ├── shared/                 # Shared utilities
 │   ├── config/            # Configuration management
 │   ├── logging/           # Structured logging with Pino
-│   └── types/             # Shared TypeScript types
+│   ├── types/             # Shared TypeScript types
+│   └── utils/             # Utility functions
 └── ui/                     # Web interface
     └── manager/           # Single-page management UI
 ```
@@ -1231,9 +864,23 @@ npm run test:coverage
 npm run test:watch
 ```
 
-### Contributing Guidelines
+### Building and Packaging
 
-See [CONTRIBUTING.md](#contributing) below.
+```bash
+# Clean and build
+npm run clean && npm run build
+
+# Create npm package
+npm pack
+
+# Install package globally for testing
+npm install -g ./teknologika-mcp-codebase-search-0.1.0.tgz
+
+# Test commands
+mcp-codebase-search --version
+mcp-codebase-ingest --help
+mcp-codebase-manager
+```
 
 ## Contributing
 
@@ -1242,8 +889,7 @@ We welcome contributions! Here's how you can help:
 ### Reporting Issues
 
 1. **Search existing issues** to avoid duplicates
-2. **Use issue templates** when available
-3. **Provide details**:
+2. **Provide details**:
    - Node.js version
    - Operating system
    - Steps to reproduce
@@ -1284,15 +930,6 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `perf:` Performance improvements
 - `chore:` Build/tooling changes
 
-### Development Workflow
-
-1. **Create an issue** describing the feature or bug
-2. **Discuss the approach** in the issue comments
-3. **Implement the changes** with tests
-4. **Submit a pull request** referencing the issue
-5. **Address review feedback**
-6. **Merge** once approved
-
 ### Areas for Contribution
 
 - 🌐 **Language support**: Add more Tree-sitter grammars
@@ -1301,6 +938,48 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 - 📚 **Documentation**: Improve guides and examples
 - 🧪 **Testing**: Increase test coverage
 - 🐛 **Bug fixes**: Fix reported issues
+- 🔍 **Search improvements**: Better ranking algorithms
+- 🏷️ **File classification**: More patterns for test/library detection
+
+## Security
+
+### Local-First Architecture
+
+- ✅ **No external API calls**: All processing happens locally
+- ✅ **No telemetry**: No usage data is collected or transmitted
+- ✅ **No cloud dependencies**: Embeddings generated locally with Hugging Face Transformers
+
+### File System Security
+
+- **Path validation**: All file paths are validated to prevent directory traversal
+- **Permission checks**: Respects file system permissions
+- **Gitignore support**: Automatically skips files in `.gitignore`
+
+### Input Validation
+
+- **Schema validation**: All inputs validated with Zod schemas
+- **Type checking**: Strict TypeScript types throughout
+- **Sanitization**: User inputs sanitized before processing
+
+### Resource Limits
+
+- **Max file size**: 1MB default (configurable)
+- **Max results**: 200 maximum per search
+- **Batch size limits**: Prevents memory exhaustion
+
+### Network Security
+
+- **Localhost only**: Manager UI binds to localhost by default
+- **Security headers**: Helmet.js for HTTP security headers
+- **Session management**: Secure session cookies
+
+### Recommendations
+
+1. **Do not expose Manager UI to public networks**
+2. **Keep the package updated** for security patches
+3. **Run regular security audits**: `npm audit`
+4. **Use strong file system permissions**
+5. **Back up data regularly** before major updates
 
 ## License
 
@@ -1313,7 +992,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Acknowledgments
 
 - [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
-- [ChromaDB](https://www.trychroma.com/) - Vector database
+- [LanceDB](https://lancedb.com/) - Vector database
 - [Tree-sitter](https://tree-sitter.github.io/) - Code parsing
 - [Hugging Face](https://huggingface.co/) - Embedding models
 - [Fastify](https://www.fastify.io/) - Web framework
@@ -1322,4 +1001,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Questions or Issues?** Open an issue on [GitHub](https://github.com/teknologika/mcp-codebase-search/issues)
 
-**Need Help?** Check the [Troubleshooting](#troubleshooting) section or start a discussion
+**Need Help?** Check the [Troubleshooting](#troubleshooting) section above

@@ -180,6 +180,10 @@ input, select, textarea {
 /* ===== Page Header ===== */
 .page-header {
     margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
 }
 
 .greeting {

@@ -89,7 +89,6 @@ export async function registerManagerRoutes(
    */
   fastify.get('/', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
-      logger.info('GET /');
       const codebases = await codebaseService.listCodebases();
       
       logger.debug('Codebases loaded', { count: codebases.length, codebases: codebases.map(c => ({ name: c.name, fileCount: c.fileCount, lastIngestion: c.lastIngestion })) });
@@ -124,7 +123,6 @@ export async function registerManagerRoutes(
       const { name } = request.params;
       
       try {
-        logger.info('GET /codebase/:name', { name });
         const stats = await codebaseService.getCodebaseStats(name);
         const codebases = await codebaseService.listCodebases();
         
@@ -312,8 +310,6 @@ export async function registerManagerRoutes(
     async (request: FastifyRequest<{ Params: { jobId: string } }>, reply: FastifyReply) => {
       const { jobId } = request.params;
       
-      logger.info('GET /ingest-progress/:jobId', { jobId });
-      
       const job = ingestionJobs.get(jobId);
       if (!job) {
         return reply.status(404).send({ error: 'Job not found' });
@@ -439,5 +435,5 @@ export async function registerManagerRoutes(
     }
   });
 
-  logger.info('Manager UI routes registered successfully');
+  logger.debug('Manager UI routes registered successfully');
 }

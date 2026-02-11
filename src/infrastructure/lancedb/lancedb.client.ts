@@ -5,11 +5,8 @@
 
 import { connect, type Connection, type Table } from '@lancedb/lancedb';
 import type { Config } from '../../shared/types/index.js';
-import { createLogger } from '../../shared/logging/index.js';
+import { createLogger, type Logger } from '../../shared/logging/index.js';
 import { SCHEMA_VERSION } from '../../shared/config/config.js';
-
-const rootLogger = createLogger('info');
-const logger = rootLogger.child('LanceDBClient');
 
 /**
  * Error thrown when LanceDB operations fail
@@ -37,9 +34,11 @@ export class LanceDBClientWrapper {
   private connection: Connection | null = null;
   private config: Config;
   private initialized: boolean = false;
+  private logger: Logger;
 
-  constructor(config: Config) {
+  constructor(config: Config, logger?: Logger) {
     this.config = config;
+    this.logger = logger ? logger.child('LanceDBClient') : createLogger('info').child('LanceDBClient');
   }
 
   /**
@@ -47,7 +46,7 @@ export class LanceDBClientWrapper {
    */
   async initialize(): Promise<void> {
     try {
-      logger.info('Initializing LanceDB client', { 
+      this.logger.debug('Initializing LanceDB client', { 
         persistPath: this.config.lancedb.persistPath,
         schemaVersion: SCHEMA_VERSION
       });
@@ -56,13 +55,13 @@ export class LanceDBClientWrapper {
       this.connection = await connect(this.config.lancedb.persistPath);
       
       this.initialized = true;
-      logger.info('LanceDB client initialized successfully', {
+      this.logger.debug('LanceDB client initialized successfully', {
         persistPath: this.config.lancedb.persistPath,
         schemaVersion: SCHEMA_VERSION
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(
+      this.logger.error(
         'Failed to initialize LanceDB client',
         error instanceof Error ? error : new Error(errorMessage),
         { persistPath: this.config.lancedb.persistPath }
@@ -101,7 +100,7 @@ export class LanceDBClientWrapper {
     const tableName = LanceDBClientWrapper.getTableName(codebaseName);
     
     try {
-      logger.info('Creating LanceDB table', {
+      this.logger.info('Creating LanceDB table', {
         codebaseName,
         tableName,
       });
@@ -117,13 +116,13 @@ export class LanceDBClientWrapper {
 
       await this.connection!.createTable(tableName, dataWithMetadata);
 
-      logger.info('Table created successfully', {
+      this.logger.info('Table created successfully', {
         codebaseName,
         tableName,
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(
+      this.logger.error(
         'Failed to create table',
         error instanceof Error ? error : new Error(errorMessage),
         { codebaseName, tableName }
@@ -145,7 +144,7 @@ export class LanceDBClientWrapper {
     const tableName = LanceDBClientWrapper.getTableName(codebaseName);
     
     try {
-      logger.debug('Getting LanceDB table', {
+      this.logger.debug('Getting LanceDB table', {
         codebaseName,
         tableName,
       });
@@ -158,14 +157,14 @@ export class LanceDBClientWrapper {
       }
 
       // Return null - caller should create table with actual data
-      logger.debug('Table does not exist, returning null', {
+      this.logger.debug('Table does not exist, returning null', {
         codebaseName,
         tableName,
       });
       return null;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(
+      this.logger.error(
         'Failed to get table',
         error instanceof Error ? error : new Error(errorMessage),
         { codebaseName, tableName }
@@ -186,7 +185,7 @@ export class LanceDBClientWrapper {
     const tableName = LanceDBClientWrapper.getTableName(codebaseName);
     
     try {
-      logger.info('Creating LanceDB table with data', {
+      this.logger.info('Creating LanceDB table with data', {
         codebaseName,
         tableName,
         rowCount: data.length,
@@ -195,7 +194,7 @@ export class LanceDBClientWrapper {
       await this.connection!.createTable(tableName, data);
       const table = await this.connection!.openTable(tableName);
 
-      logger.info('Table created successfully', {
+      this.logger.info('Table created successfully', {
         codebaseName,
         tableName,
       });
@@ -203,7 +202,7 @@ export class LanceDBClientWrapper {
       return table;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(
+      this.logger.error(
         'Failed to create table with data',
         error instanceof Error ? error : new Error(errorMessage),
         { codebaseName, tableName }
@@ -224,7 +223,7 @@ export class LanceDBClientWrapper {
     const tableName = LanceDBClientWrapper.getTableName(codebaseName);
     
     try {
-      logger.debug('Checking if table exists', {
+      this.logger.debug('Checking if table exists', {
         codebaseName,
         tableName,
       });
@@ -232,7 +231,7 @@ export class LanceDBClientWrapper {
       const tableNames = await this.connection!.tableNames();
       return tableNames.includes(tableName);
     } catch (error) {
-      logger.debug('Table check failed', {
+      this.logger.debug('Table check failed', {
         codebaseName,
         tableName,
       });
@@ -249,20 +248,20 @@ export class LanceDBClientWrapper {
     const tableName = LanceDBClientWrapper.getTableName(codebaseName);
     
     try {
-      logger.info('Deleting LanceDB table', {
+      this.logger.info('Deleting LanceDB table', {
         codebaseName,
         tableName,
       });
 
       await this.connection!.dropTable(tableName);
 
-      logger.info('Table deleted successfully', {
+      this.logger.info('Table deleted successfully', {
         codebaseName,
         tableName,
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(
+      this.logger.error(
         'Failed to delete table',
         error instanceof Error ? error : new Error(errorMessage),
         { codebaseName, tableName }
@@ -281,7 +280,7 @@ export class LanceDBClientWrapper {
     await this.ensureInitialized();
 
     try {
-      logger.debug('Listing all tables');
+      this.logger.debug('Listing all tables');
 
       const tableNames = await this.connection!.tableNames();
       
@@ -304,14 +303,14 @@ export class LanceDBClientWrapper {
         }
       }
 
-      logger.debug('Tables listed successfully', {
+      this.logger.debug('Tables listed successfully', {
         count: collections.length,
       });
 
       return collections;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(
+      this.logger.error(
         'Failed to list tables',
         error instanceof Error ? error : new Error(errorMessage)
       );

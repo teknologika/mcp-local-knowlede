@@ -42,7 +42,7 @@ export class CodebaseService {
    */
   async listCodebases(): Promise<CodebaseMetadata[]> {
     try {
-      logger.info('Listing all codebases');
+      logger.debug('Listing all codebases');
 
       const tables = await this.lanceClient.listTables();
       const codebases: CodebaseMetadata[]  = [];
@@ -88,7 +88,8 @@ export class CodebaseService {
             languages = Array.from(uniqueLanguages);
           }
         } catch (error) {
-          logger.warn('Failed to get table metadata', { codebaseName, error });
+          // Silently ignore metadata errors - table may be corrupted or incompatible
+          // This is not critical for listing codebases
         }
 
         codebases.push({
@@ -101,7 +102,7 @@ export class CodebaseService {
         });
       }
 
-      logger.info('Codebases listed successfully', { count: codebases.length });
+      logger.debug('Codebases listed successfully', { count: codebases.length });
       return codebases;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -121,7 +122,7 @@ export class CodebaseService {
    */
   async getCodebaseStats(name: string): Promise<CodebaseStats> {
     try {
-      logger.info('Getting codebase statistics', { codebaseName: name });
+      logger.debug('Getting codebase statistics', { codebaseName: name });
 
       const table = await this.lanceClient.getOrCreateTable(name);
       if (!table) {
@@ -195,7 +196,7 @@ export class CodebaseService {
         sizeBytes: totalSize,
       };
 
-      logger.info('Codebase statistics retrieved successfully', {
+      logger.debug('Codebase statistics retrieved successfully', {
         codebaseName: name,
         chunkCount,
         fileCount: fileSet.size,
@@ -221,7 +222,7 @@ export class CodebaseService {
    */
   async renameCodebase(oldName: string, newName: string): Promise<void> {
     try {
-      logger.info('Renaming codebase', { oldName, newName });
+      logger.debug('Renaming codebase', { oldName, newName });
 
       // Get the old table
       const oldTable = await this.lanceClient.getOrCreateTable(oldName);
@@ -252,7 +253,7 @@ export class CodebaseService {
       // Delete old table
       await this.lanceClient.deleteTable(oldName);
 
-      logger.info('Codebase renamed successfully', {
+      logger.debug('Codebase renamed successfully', {
         oldName,
         newName,
         chunksUpdated: rows.length,
@@ -276,11 +277,11 @@ export class CodebaseService {
    */
   async deleteCodebase(name: string): Promise<void> {
     try {
-      logger.info('Deleting codebase', { codebaseName: name });
+      logger.debug('Deleting codebase', { codebaseName: name });
 
       await this.lanceClient.deleteTable(name);
 
-      logger.info('Codebase deleted successfully', { codebaseName: name });
+      logger.debug('Codebase deleted successfully', { codebaseName: name });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(
@@ -300,7 +301,7 @@ export class CodebaseService {
    */
   async deleteChunkSet(codebaseName: string, timestamp: string): Promise<number> {
     try {
-      logger.info('Deleting chunk set', { codebaseName, timestamp });
+      logger.debug('Deleting chunk set', { codebaseName, timestamp });
 
       const table = await this.lanceClient.getOrCreateTable(codebaseName);
       if (!table) {
@@ -325,7 +326,7 @@ export class CodebaseService {
       // Delete the chunks
       await table.delete(`ingestionTimestamp = '${timestamp}'`);
 
-      logger.info('Chunk set deleted successfully', {
+      logger.debug('Chunk set deleted successfully', {
         codebaseName,
         timestamp,
         chunksDeleted: chunkCount,

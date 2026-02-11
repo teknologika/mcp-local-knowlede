@@ -544,3 +544,30 @@ function toggleSearchResult(element) {
     const isExpanded = element.getAttribute('data-expanded') === 'true';
     element.setAttribute('data-expanded', isExpanded ? 'false' : 'true');
 }
+
+// Quit manager with confirmation
+function quitManager() {
+    if (confirm('Quit Codebase Manager?\n\nThis will shut down the manager server and close this tab.')) {
+        // Call shutdown endpoint
+        fetch('/api/shutdown', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        })
+        .then(function() {
+            // Close the tab after a short delay
+            setTimeout(function() {
+                window.close();
+                // If window.close() doesn't work (some browsers block it), show a message
+                setTimeout(function() {
+                    document.body.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, -apple-system, sans-serif;"><div style="text-align: center;"><h1 style="font-size: 2rem; margin-bottom: 1rem;">Manager Stopped</h1><p style="color: #666;">You can close this tab now.</p></div></div>';
+                }, 100);
+            }, 300);
+        })
+        .catch(function(error) {
+            alert('Failed to shut down server: ' + error.message);
+        });
+    }
+}

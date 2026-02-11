@@ -367,5 +367,5 @@ export async function registerRoutes(
     }
   );
 
-  logger.info('API routes registered successfully');
+  logger.debug('API routes registered successfully');
 }
