@@ -6,12 +6,19 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import helmet from '@fastify/helmet';
 import fastifyStatic from '@fastify/static';
+import fastifyView from '@fastify/view';
+import fastifySession from '@fastify/session';
+import fastifyFlash from '@fastify/flash';
+import fastifyCookie from '@fastify/cookie';
+import fastifyFormbody from '@fastify/formbody';
+import handlebars from 'handlebars';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import type { CodebaseService } from '../../domains/codebase/codebase.service.js';
 import type { SearchService } from '../../domains/search/search.service.js';
 import type { Config } from '../../shared/types/index.js';
 import { registerRoutes } from './routes.js';
+import { registerManagerRoutes } from './manager-routes.js';
 import { createLogger } from '../../shared/logging/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -74,33 +81,56 @@ export class FastifyServer {
    * Set up server middleware and routes
    */
   private setupServer(): void {
-    // Register security headers with Helmet
+    // Register security headers with Helmet - relaxed for localhost development
     this.fastify.register(helmet, {
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'https:'],
-        },
-      },
-      hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true,
+      contentSecurityPolicy: false, // Disable CSP entirely for localhost
+      hsts: false, // Disable HSTS to avoid Safari issues with localhost
+    });
+
+    // Register form body parser (for POST forms)
+    this.fastify.register(fastifyFormbody);
+
+    // Register cookie support (required for session)
+    this.fastify.register(fastifyCookie);
+
+    // Register session support (required for flash messages)
+    this.fastify.register(fastifySession, {
+      secret: this.config.server.sessionSecret || 'change-me-in-production-please-use-a-long-random-string',
+      cookie: {
+        secure: false, // Set to true in production with HTTPS
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
       },
     });
 
-    // Register static file serving for UI
-    const uiPath = join(__dirname, '../../ui/manager');
+    // Register flash messages
+    this.fastify.register(fastifyFlash);
+
+    // Register static file serving for UI assets
+    const staticPath = join(__dirname, '../../ui/manager/static');
     this.fastify.register(fastifyStatic, {
-      root: uiPath,
-      prefix: '/',
+      root: staticPath,
+      prefix: '/static/',
     });
+
+    // Register view engine with Handlebars
+    const templatesPath = join(__dirname, '../../ui/manager/templates');
+    this.fastify.register(fastifyView, {
+      engine: {
+        handlebars,
+      },
+      root: templatesPath,
+      layout: 'layout.hbs',
+      options: {
+        partials: {},
+      },
+    });
+
+    // Register Handlebars helpers
+    handlebars.registerHelper('eq', (a: any, b: any) => a === b);
 
     // Add global error handler
     this.fastify.setErrorHandler((error, request, reply) => {
-      logger.error('Unhandled error', error, {
+      logger.error('Unhandled error', error instanceof Error ? error : new Error(String(error)), {
         method: request.method,
         url: request.url,
       });
@@ -111,6 +141,11 @@ export class FastifyServer {
           message: 'An unexpected error occurred',
         },
       });
+    });
+
+    // Register Manager UI routes (SSR)
+    this.fastify.register(async (instance) => {
+      await registerManagerRoutes(instance, this.codebaseService, this.searchService);
     });
 
     // Register API routes
@@ -126,7 +161,7 @@ export class FastifyServer {
       };
     });
 
-    logger.info('Fastify server configured', { uiPath });
+    logger.info('Fastify server configured', { staticPath, templatesPath });
   }
 
   /**

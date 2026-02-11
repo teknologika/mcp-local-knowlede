@@ -79,6 +79,7 @@ const configSchema: JSONSchemaType<Config> = {
       properties: {
         port: { type: 'integer', minimum: 1, maximum: 65535 },
         host: { type: 'string', minLength: 1 },
+        sessionSecret: { type: 'string', nullable: true },
       },
       required: ['port', 'host'],
       additionalProperties: false,

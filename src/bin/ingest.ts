@@ -183,6 +183,8 @@ async function main() {
       ...stats,
     });
 
+    // Give LanceDB time to cleanup before exit
+    await new Promise(resolve => setTimeout(resolve, 100));
     process.exit(0);
   } catch (error) {
     console.error('');

@@ -57,8 +57,8 @@ export class CodebaseService {
 
         const codebaseName = metadata.codebaseName as string;
         
-        // Open table to query chunk count
-        const lanceTable = await this.lanceClient.getOrCreateTable(codebaseName);
+        // Open table directly by name
+        const lanceTable = await this.lanceClient.getConnection().openTable(table.name);
         const count = await lanceTable.countRows();
         
         // Extract metadata from first row if available
@@ -124,6 +124,9 @@ export class CodebaseService {
       logger.info('Getting codebase statistics', { codebaseName: name });
 
       const table = await this.lanceClient.getOrCreateTable(name);
+      if (!table) {
+        throw new CodebaseError(`Codebase '${name}' not found`);
+      }
       
       // Get all rows to calculate statistics
       const rows = await table.query().toArray();
@@ -222,6 +225,9 @@ export class CodebaseService {
 
       // Get the old table
       const oldTable = await this.lanceClient.getOrCreateTable(oldName);
+      if (!oldTable) {
+        throw new CodebaseError(`Codebase '${oldName}' not found`);
+      }
       
       // Get all rows from old table
       const rows = await oldTable.query().toArray();
@@ -239,9 +245,8 @@ export class CodebaseService {
       }));
 
       // Create new table with updated data
-      const newTable = await this.lanceClient.getOrCreateTable(newName);
       if (updatedRows.length > 0) {
-        await newTable.add(updatedRows);
+        await this.lanceClient.createTableWithData(newName, updatedRows);
       }
 
       // Delete old table
@@ -298,6 +303,9 @@ export class CodebaseService {
       logger.info('Deleting chunk set', { codebaseName, timestamp });
 
       const table = await this.lanceClient.getOrCreateTable(codebaseName);
+      if (!table) {
+        throw new CodebaseError(`Codebase '${codebaseName}' not found`);
+      }
 
       // Count chunks with the specified timestamp
       const rows = await table.query()

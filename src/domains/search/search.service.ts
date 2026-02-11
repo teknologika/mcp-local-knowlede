@@ -166,7 +166,8 @@ export class SearchService {
       for (const tableName of tables) {
         const tableTimer = startTimer('searchTable', logger, { tableName });
         try {
-          const table = await this.lanceClient.getOrCreateTable(tableName);
+          // Open table directly by name instead of using getOrCreateTable
+          const table = await this.lanceClient.getConnection().openTable(tableName);
 
           // Perform vector search
           let query = table.search(queryEmbedding).limit(maxResults);

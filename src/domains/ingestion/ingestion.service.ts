@@ -286,7 +286,7 @@ export class IngestionService {
 
       // Get current chunk count before deletion
       const table = await this.lanceClient.getOrCreateTable(codebaseName);
-      const previousCount = await table.countRows();
+      const previousCount = table ? await table.countRows() : 0;
 
       // Delete the table
       await this.lanceClient.deleteTable(codebaseName);
@@ -381,12 +381,10 @@ export class IngestionService {
       return;
     }
 
-    // Get or create table
-    const table = await this.lanceClient.getOrCreateTable(codebaseName);
-
     // Store chunks in batches
     const batchSize = this.config.ingestion.batchSize;
     let storedCount = 0;
+    let table: any = null;
 
     for (let i = 0; i < chunks.length; i += batchSize) {
       const batch = chunks.slice(i, i + batchSize);
@@ -395,19 +393,47 @@ export class IngestionService {
       const rows = batch.map((chunk, idx) => ({
         id: `${codebaseName}_${ingestionTimestamp}_${i + idx}`,
         vector: chunk.embedding,
-        content: chunk.content,
-        filePath: chunk.filePath,
-        startLine: chunk.startLine,
-        endLine: chunk.endLine,
-        language: chunk.language,
-        chunkType: chunk.chunkType,
+        content: chunk.content || '',
+        filePath: chunk.filePath || '',
+        startLine: chunk.startLine || 0,
+        endLine: chunk.endLine || 0,
+        language: chunk.language || 'unknown',
+        chunkType: chunk.chunkType || 'unknown',
         ingestionTimestamp,
         _codebaseName: codebaseName,
         _path: codebasePath,
         _lastIngestion: ingestionTimestamp,
       }));
 
+      // Debug: Log first row structure
+      if (i === 0 && rows.length > 0) {
+        this.logger.debug('First row structure', {
+          id: rows[0].id,
+          vectorLength: rows[0].vector?.length,
+          contentLength: rows[0].content.length,
+          filePath: rows[0].filePath,
+          hasAllFields: Object.keys(rows[0]).join(','),
+        });
+      }
+
       try {
+        // For first batch, create table if it doesn't exist
+        if (i === 0) {
+          table = await this.lanceClient.getOrCreateTable(codebaseName);
+          if (!table) {
+            // Table doesn't exist, create it with first batch
+            this.logger.info('Creating new table with first batch', {
+              codebaseName,
+              batchSize: rows.length,
+            });
+            table = await this.lanceClient.createTableWithData(codebaseName, rows);
+            storedCount += batch.length;
+            progressCallback?.('Storing chunks', storedCount, chunks.length);
+            continue; // Skip the add() call below since we already created with data
+          }
+        }
+
+        // Add batch to existing table
         await table.add(rows);
 
         storedCount += batch.length;

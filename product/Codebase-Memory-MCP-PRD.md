@@ -82,7 +82,7 @@ A user runs the ingestion CLI to index a repository into a named codebase, then 
 - The system stores chunk embeddings plus metadata in ChromaDB, where metadata includes codebase name, repo root, file path, language, symbol hints, file hash, modified time, chunk boundaries, and last indexed time.
 - Chunking uses Tree-sitter parsing for the supported languages. For files detected as unsupported languages, ingestion records a clear warning and skips chunking and embedding.
 - Embeddings are generated locally via `@huggingface/transformers` using out of the box defaults, with caching to avoid repeated compute across re-ingest runs.
-- The Fastify API and MCP tools call into the same internal service layer so search behaviour, filters, ranking, and provenance formatting remain identical across surfaces.
+- The Fastify API and MCP tools search behaviour, filters, ranking, and provenance formatting remain identical across surfaces.
 
 **Technical Risks**
 

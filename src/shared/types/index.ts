@@ -31,6 +31,7 @@ export interface Config {
   server: {
     port: number;
     host: string;
+    sessionSecret?: string;
   };
   mcp: {
     transport: "stdio";

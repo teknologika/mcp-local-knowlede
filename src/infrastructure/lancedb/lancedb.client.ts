@@ -137,14 +137,15 @@ export class LanceDBClientWrapper {
 
   /**
    * Get or create a table for a codebase
+   * Returns null if table doesn't exist (caller should create it with actual data)
    */
-  async getOrCreateTable(codebaseName: string): Promise<Table> {
+  async getOrCreateTable(codebaseName: string): Promise<Table | null> {
     await this.ensureInitialized();
 
     const tableName = LanceDBClientWrapper.getTableName(codebaseName);
     
     try {
-      logger.debug('Getting or creating LanceDB table', {
+      logger.debug('Getting LanceDB table', {
         codebaseName,
         tableName,
       });
@@ -156,32 +157,59 @@ export class LanceDBClientWrapper {
         return await this.connection!.openTable(tableName);
       }
 
-      // Create empty table with schema
-      const emptyData = [{
-        id: 'placeholder',
-        vector: new Array(384).fill(0), // MiniLM embedding size
-        content: '',
-        _codebaseName: codebaseName,
-        _schemaVersion: SCHEMA_VERSION,
-        _createdAt: new Date().toISOString(),
-      }];
-
-      await this.connection!.createTable(tableName, emptyData);
-      const table = await this.connection!.openTable(tableName);
-      
-      // Delete placeholder
-      await table.delete('id = "placeholder"');
-      
-      return table;
+      // Return null - caller should create table with actual data
+      logger.debug('Table does not exist, returning null', {
+        codebaseName,
+        tableName,
+      });
+      return null;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(
-        'Failed to get or create table',
+        'Failed to get table',
         error instanceof Error ? error : new Error(errorMessage),
         { codebaseName, tableName }
       );
       throw new LanceDBError(
-        `Failed to get or create table for codebase '${codebaseName}': ${errorMessage}`,
+        `Failed to get table for codebase '${codebaseName}': ${errorMessage}`,
+        error
+      );
+    }
+  }
+
+  /**
+   * Create a table with initial data
+   */
+  async createTableWithData(codebaseName: string, data: any[]): Promise<Table> {
+    await this.ensureInitialized();
+
+    const tableName = LanceDBClientWrapper.getTableName(codebaseName);
+    
+    try {
+      logger.info('Creating LanceDB table with data', {
+        codebaseName,
+        tableName,
+        rowCount: data.length,
+      });
+
+      await this.connection!.createTable(tableName, data);
+      const table = await this.connection!.openTable(tableName);
+
+      logger.info('Table created successfully', {
+        codebaseName,
+        tableName,
+      });
+
+      return table;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(
+        'Failed to create table with data',
+        error instanceof Error ? error : new Error(errorMessage),
+        { codebaseName, tableName }
+      );
+      throw new LanceDBError(
+        `Failed to create table for codebase '${codebaseName}': ${errorMessage}`,
         error
       );
     }

@@ -491,30 +491,43 @@
     let currentDeleteCodebase = null;
     let currentDeleteChunkSet = null;
 
-    // API base URL
-    const API_BASE = '/api';
+    // API base URL - use absolute URL to avoid Safari TLS upgrade issues
+    const API_BASE = `${window.location.protocol}//${window.location.host}/api`;
 
     // Initialize app
     async function init() {
-      await loadCodebases();
+      // Check if we have initial data embedded in the page
+      if (window.__INITIAL_DATA__ && window.__INITIAL_DATA__.codebases) {
+        console.log('Using embedded initial data');
+        codebases = window.__INITIAL_DATA__.codebases;
+        renderCodebases();
+      } else {
+        // Fallback to API fetch
+        await loadCodebases();
+      }
     }
 
     // Load all codebases
     async function loadCodebases() {
       try {
+        console.log('Loading codebases from:', `${API_BASE}/codebases`);
         const response = await fetch(`${API_BASE}/codebases`);
+        console.log('Response status:', response.status);
+        
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
+        console.log('Codebases loaded:', data);
         codebases = data.codebases || [];
         renderCodebases();
       } catch (error) {
+        console.error('Failed to load codebases:', error);
         showError(`Failed to load codebases: ${error.message}`);
         document.getElementById('codebasesContent').innerHTML = `
           <div class="empty-state">
-            <p>Failed to load codebases</p>
+            <p>Failed to load codebases: ${error.message}</p>
             <button class="btn-primary" onclick="loadCodebases()">Retry</button>
           </div>
         `;
@@ -570,6 +583,17 @@
       renderCodebases();
       
       const detailsContent = document.getElementById('detailsContent');
+      
+      // Check if we have stats in the embedded data
+      const codebase = codebases.find(cb => cb.name === name);
+      if (codebase && codebase.stats) {
+        console.log('Using embedded stats data');
+        selectedCodebaseStats = codebase.stats;
+        renderCodebaseDetails();
+        return;
+      }
+      
+      // Fallback to API fetch
       detailsContent.innerHTML = `
         <div class="loading">
           <div class="spinner"></div>
