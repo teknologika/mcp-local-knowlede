@@ -78,7 +78,32 @@ npx mcp-codebase-manager
 
 - **Node.js**: 23.0.0 or higher
 - **npm**: 10.0.0 or higher
+- **Python**: 3.10 or higher (for document conversion)
 - **Disk Space**: ~500MB for embedding models (downloaded on first use)
+
+### Python Dependencies
+
+This package uses [Docling](https://github.com/DS4SD/docling) for document conversion (PDF, DOCX, PPTX, XLSX, HTML, and more). You need to install Docling separately:
+
+```bash
+pip install docling
+```
+
+**What is Docling?**
+
+Docling is a powerful document conversion library that transforms various document formats into markdown while preserving structure, tables, and formatting. It includes OCR support for scanned PDFs and handles complex document layouts intelligently.
+
+**Verifying Installation:**
+
+After installing, verify Docling is available:
+
+```bash
+python -c "import docling; print('Docling installed successfully')"
+```
+
+**Learn More:**
+- [Docling Documentation](https://github.com/DS4SD/docling)
+- [Docling PyPI Package](https://pypi.org/project/docling/)
 
 ## Quick Start
 
@@ -745,6 +770,397 @@ mcp-codebase-search
 cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
 
 # Check logs for errors
+```
+
+### Docling-Specific Issues
+
+#### 7. "Docling not found" or "docling-sdk is not installed"
+
+**Problem:** Python Docling is not installed or not in PATH.
+
+**Solution:**
+```bash
+# Verify Python is installed (3.10+ required)
+python --version
+
+# Install Docling
+pip install docling
+
+# Verify installation
+python -c "import docling; print('Docling installed successfully')"
+
+# If using a virtual environment, activate it first
+source venv/bin/activate  # Linux/macOS
+venv\Scripts\activate     # Windows
+pip install docling
+```
+
+**Alternative Solution (if pip fails):**
+```bash
+# Try with pip3
+pip3 install docling
+
+# Or use python -m pip
+python -m pip install docling
+
+# For user-level install (no sudo required)
+pip install --user docling
+```
+
+#### 8. Python Version Issues
+
+**Problem:** Docling requires Python 3.10 or higher, but an older version is installed.
+
+**Solution:**
+
+**macOS (using Homebrew):**
+```bash
+# Install Python 3.11
+brew install python@3.11
+
+# Verify version
+python3.11 --version
+
+# Install Docling with specific Python version
+python3.11 -m pip install docling
+```
+
+**Ubuntu/Debian:**
+```bash
+# Add deadsnakes PPA for newer Python versions
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+
+# Install Python 3.11
+sudo apt install python3.11 python3.11-pip
+
+# Install Docling
+python3.11 -m pip install docling
+```
+
+**Windows:**
+```powershell
+# Download Python 3.11+ from python.org
+# https://www.python.org/downloads/
+
+# After installation, verify
+python --version
+
+# Install Docling
+pip install docling
+```
+
+**Using pyenv (all platforms):**
+```bash
+# Install pyenv (see https://github.com/pyenv/pyenv)
+curl https://pyenv.run | bash
+
+# Install Python 3.11
+pyenv install 3.11.7
+pyenv global 3.11.7
+
+# Verify
+python --version
+
+# Install Docling
+pip install docling
+```
+
+#### 9. Docling Installation Fails on macOS
+
+**Problem:** Installation fails with compiler errors or missing dependencies.
+
+**Solution:**
+```bash
+# Install Xcode Command Line Tools
+xcode-select --install
+
+# Install required system dependencies via Homebrew
+brew install cmake pkg-config
+
+# Try installing Docling again
+pip install docling
+
+# If still failing, try with verbose output to see the error
+pip install -v docling
+```
+
+**Common macOS-specific issues:**
+```bash
+# If you see "error: command 'clang' failed"
+# Install or update Xcode Command Line Tools
+sudo rm -rf /Library/Developer/CommandLineTools
+xcode-select --install
+
+# If you see "fatal error: 'Python.h' file not found"
+# Install Python development headers
+brew reinstall python@3.11
+```
+
+#### 10. Docling Installation Fails on Linux
+
+**Problem:** Missing system dependencies or compiler errors.
+
+**Solution:**
+
+**Ubuntu/Debian:**
+```bash
+# Install build essentials and Python development headers
+sudo apt update
+sudo apt install build-essential python3-dev python3-pip
+
+# Install additional dependencies
+sudo apt install libpoppler-cpp-dev pkg-config
+
+# Try installing Docling again
+pip install docling
+```
+
+**Fedora/RHEL/CentOS:**
+```bash
+# Install development tools
+sudo dnf groupinstall "Development Tools"
+sudo dnf install python3-devel
+
+# Install additional dependencies
+sudo dnf install poppler-cpp-devel
+
+# Try installing Docling again
+pip install docling
+```
+
+**Arch Linux:**
+```bash
+# Install base development packages
+sudo pacman -S base-devel python-pip
+
+# Install additional dependencies
+sudo pacman -S poppler
+
+# Try installing Docling again
+pip install docling
+```
+
+#### 11. Docling Installation Fails on Windows
+
+**Problem:** Missing Visual C++ build tools or compilation errors.
+
+**Solution:**
+```powershell
+# Install Microsoft C++ Build Tools
+# Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+# During installation, select "Desktop development with C++"
+
+# After installation, restart your terminal and try again
+pip install docling
+
+# Alternative: Use pre-built wheels if available
+pip install --only-binary :all: docling
+```
+
+**If using Windows Subsystem for Linux (WSL):**
+```bash
+# Follow the Linux instructions above
+# WSL provides a better environment for Python packages with native dependencies
+```
+
+#### 12. Document Conversion Fails
+
+**Problem:** Docling fails to convert a specific document.
+
+**Solution:**
+```bash
+# Check if the document is corrupted
+# Try opening it in its native application first
+
+# Check file permissions
+ls -l /path/to/document.pdf
+
+# Try converting manually to see the error
+python -c "from docling.document_converter import DocumentConverter; \
+           converter = DocumentConverter(); \
+           result = converter.convert('/path/to/document.pdf'); \
+           print(result)"
+
+# Check Docling logs for detailed error messages
+# Logs are typically in the system temp directory
+```
+
+**Common conversion issues:**
+
+**Encrypted PDFs:**
+```bash
+# Docling cannot process password-protected PDFs
+# Remove password protection first using tools like:
+# - qpdf: qpdf --decrypt input.pdf output.pdf
+# - pdftk: pdftk input.pdf output output.pdf
+```
+
+**Scanned PDFs (images):**
+```bash
+# Docling uses OCR for scanned PDFs
+# Ensure tesseract is installed for better OCR results
+brew install tesseract       # macOS
+sudo apt install tesseract-ocr  # Ubuntu/Debian
+```
+
+**Corrupted documents:**
+```bash
+# Try repairing the document first
+# For PDFs: use tools like pdftk or ghostscript
+gs -o repaired.pdf -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress input.pdf
+```
+
+#### 13. Document Conversion Timeout
+
+**Problem:** Large documents take too long to convert and timeout after 30 seconds.
+
+**Solution:**
+
+**Increase timeout in configuration:**
+```json
+{
+  "document": {
+    "conversionTimeout": 60000
+  }
+}
+```
+
+**Or split large documents:**
+```bash
+# For PDFs, split into smaller chunks
+# Using pdftk
+pdftk large.pdf burst output page_%04d.pdf
+
+# Using ghostscript
+gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER \
+   -dFirstPage=1 -dLastPage=50 \
+   -sOutputFile=part1.pdf large.pdf
+```
+
+**Optimize document before conversion:**
+```bash
+# Compress PDF to reduce size
+gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 \
+   -dPDFSETTINGS=/ebook -dNOPAUSE -dQUIET -dBATCH \
+   -sOutputFile=compressed.pdf input.pdf
+```
+
+#### 14. Performance Issues with Large Documents
+
+**Problem:** Document processing is very slow or uses excessive memory.
+
+**Solution:**
+
+**Adjust batch size for ingestion:**
+```json
+{
+  "ingestion": {
+    "batchSize": 50
+  }
+}
+```
+
+**Increase Node.js memory limit:**
+```bash
+# Set max memory to 4GB
+export NODE_OPTIONS="--max-old-space-size=4096"
+
+# Then run ingestion
+mcp-codebase-ingest --path ./docs --name my-docs
+```
+
+**Process documents in smaller batches:**
+```bash
+# Instead of ingesting entire directory at once
+# Process subdirectories separately
+mcp-codebase-ingest --path ./docs/section1 --name my-docs
+mcp-codebase-ingest --path ./docs/section2 --name my-docs
+```
+
+**Optimize document files:**
+```bash
+# Reduce PDF file sizes
+gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 \
+   -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH \
+   -sOutputFile=optimized.pdf input.pdf
+
+# Convert DOCX to PDF for better processing
+# Use LibreOffice in headless mode
+libreoffice --headless --convert-to pdf document.docx
+```
+
+**Monitor resource usage:**
+```bash
+# Check memory usage during ingestion
+# macOS
+top -pid $(pgrep -f mcp-codebase-ingest)
+
+# Linux
+htop -p $(pgrep -f mcp-codebase-ingest)
+
+# Windows
+# Use Task Manager or Resource Monitor
+```
+
+#### 15. Audio Transcription Issues
+
+**Problem:** Audio files fail to transcribe or produce poor results.
+
+**Solution:**
+
+**Ensure audio format is supported:**
+```bash
+# Supported formats: MP3, WAV, M4A, FLAC
+# Convert unsupported formats using ffmpeg
+ffmpeg -i input.ogg -acodec libmp3lame output.mp3
+```
+
+**Improve transcription quality:**
+```bash
+# Convert to WAV with optimal settings for speech recognition
+ffmpeg -i input.mp3 -ar 16000 -ac 1 -c:a pcm_s16le output.wav
+
+# Reduce background noise (requires sox)
+sox input.wav output.wav noisered noise-profile.txt 0.21
+```
+
+**Check Whisper model installation:**
+```bash
+# Docling uses Whisper for audio transcription
+# Verify it's installed
+python -c "import whisper; print('Whisper available')"
+
+# If not installed
+pip install openai-whisper
+```
+
+#### 16. Docling CLI Not Found in PATH
+
+**Problem:** System can't find the Docling CLI executable.
+
+**Solution:**
+```bash
+# Find where pip installed Docling
+pip show docling | grep Location
+
+# Add Python scripts directory to PATH
+# macOS/Linux (add to ~/.bashrc or ~/.zshrc)
+export PATH="$HOME/.local/bin:$PATH"
+
+# Windows (add to System Environment Variables)
+# Add: C:\Users\YourUsername\AppData\Local\Programs\Python\Python311\Scripts
+
+# Verify Docling is accessible
+which docling  # macOS/Linux
+where docling  # Windows
+```
+
+**Alternative: Use Python module directly:**
+```bash
+# Instead of calling 'docling' command
+# Use Python module invocation
+python -m docling.cli convert document.pdf
 ```
 
 ### Performance Tips

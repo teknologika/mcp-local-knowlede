@@ -2,7 +2,7 @@
  * MCP Server Implementation
  * 
  * Implements the Model Context Protocol server with stdio transport.
- * Exposes tools for codebase search and management.
+ * Exposes tools for knowledge base search and management.
  * 
  * Validates: Requirements 1.1, 1.2, 1.3, 1.4, 11.3, 15.1, 15.2, 15.3, 15.4, 15.5
  */
@@ -19,7 +19,7 @@ import addFormatsModule from 'ajv-formats';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { Config } from '../../shared/types/index.js';
-import type { KnowledgeBaseService } from '../../domains/knowledgebase/codebase.service.js';
+import type { KnowledgeBaseService } from '../../domains/knowledgebase/knowledgebase.service.jsce.js';
 import type { SearchService } from '../../domains/search/search.service.js';
 import {
   ALL_TOOL_SCHEMAS,
@@ -181,7 +181,7 @@ export class MCPServer {
     const results = await this.searchService.search({
       query: input.query,
       knowledgeBaseName: input.codebaseName,
-      language: input.language,
+      documentType: input.documentType,
       maxResults: input.maxResults,
     });
 

@@ -4,7 +4,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { KnowledgeBaseService } from '../../domains/knowledgebase/codebase.service.js';
+import type { KnowledgeBaseService } from '../../domains/knowledgebase/knowledgebase.service.jsce.js';
 import type { SearchService } from '../../domains/search/search.service.js';
 import AjvModule from 'ajv';
 import addFormatsModule from 'ajv-formats';
@@ -30,7 +30,7 @@ const schemas = {
     properties: {
       query: { type: 'string', minLength: 1 },
       knowledgeBaseName: { type: 'string' },
-      language: { type: 'string' },
+      documentType: { type: 'string' },
       maxResults: { type: 'integer', minimum: 1, maximum: 1000 },
     },
     required: ['query'],

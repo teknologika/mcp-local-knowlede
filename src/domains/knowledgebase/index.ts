@@ -2,4 +2,4 @@
  * Knowledge base domain exports
  */
 
-export { KnowledgeBaseService, KnowledgeBaseError } from './codebase.service.js';
+export { KnowledgeBaseService, KnowledgeBaseError } from './knowledgebase.service.jsce.js';

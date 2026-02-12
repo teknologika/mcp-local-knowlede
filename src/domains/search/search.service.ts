@@ -61,7 +61,7 @@ export class SearchService {
     return JSON.stringify({
       query: params.query,
       codebaseName: params.knowledgeBaseName || null,
-      language: params.language || null,
+      documentType: params.documentType || null,
       maxResults: params.maxResults || this.config.search.defaultMaxResults,
     });
   }
@@ -110,14 +110,14 @@ export class SearchService {
     const timer = startTimer('search', logger, {
       query: params.query.substring(0, 100),
       codebaseName: params.knowledgeBaseName,
-      language: params.language,
+      documentType: params.documentType,
     });
 
     try {
       logger.info('Executing search', {
         query: params.query.substring(0, 100),
         codebaseName: params.knowledgeBaseName,
-        language: params.language,
+        documentType: params.documentType,
         maxResults: params.maxResults,
       });
 
@@ -175,8 +175,8 @@ export class SearchService {
           // Add metadata filters if specified
           const filters: string[] = [];
           
-          if (params.language) {
-            filters.push(`language = '${params.language}'`);
+          if (params.documentType) {
+            filters.push(`documentType = '${params.documentType}'`);
           }
           
           if (params.excludeTests) {
@@ -208,14 +208,17 @@ export class SearchService {
             }
             
             const result: SearchResult = {
-              filePath: row.filePath || '',
-              startLine: row.startLine || 0,
-              endLine: row.endLine || 0,
-              language: row.language || '',
-              chunkType: row.chunkType || '',
               content: row.content || '',
-              similarityScore,
-              knowledgeBaseName: row._knowledgeBaseName || tableName,
+              score: similarityScore,
+              metadata: {
+                filePath: row.filePath || '',
+                documentType: row.documentType || 'text',
+                chunkType: row.chunkType || '',
+                chunkIndex: row.chunkIndex || 0,
+                isTest: row.isTestFile || false,
+                pageNumber: row.pageNumber,
+                headingPath: row.headingPath,
+              },
             };
 
             allResults.push(result);
@@ -232,7 +235,7 @@ export class SearchService {
       }
 
       // Sort all results by similarity score in descending order
-      allResults.sort((a, b) => b.similarityScore - a.similarityScore);
+      allResults.sort((a, b) => b.score - a.score);
 
       // Limit to max results
       const limitedResults = allResults.slice(0, maxResults);

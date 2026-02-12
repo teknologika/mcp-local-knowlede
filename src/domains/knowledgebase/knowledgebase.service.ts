@@ -64,7 +64,6 @@ export class KnowledgeBaseService {
         let path = '';
         let fileCount = 0;
         let lastIngestion = '';
-        let languages: string[] = [];
 
         try {
           const sample = await lanceTable.query().limit(1).toArray();
@@ -73,18 +72,15 @@ export class KnowledgeBaseService {
             path = firstRow._path || '';
             lastIngestion = firstRow._lastIngestion || firstRow._createdAt || '';
             
-            // Get unique languages and file count from all rows
-            const allRows = await lanceTable.query().select(['language', 'filePath']).toArray();
+            // Get unique file count from all rows
+            const allRows = await lanceTable.query().select(['filePath']).toArray();
             const uniqueFiles = new Set<string>();
-            const uniqueLanguages = new Set<string>();
             
             for (const row of allRows) {
               if (row.filePath) uniqueFiles.add(row.filePath);
-              if (row.language) uniqueLanguages.add(row.language);
             }
             
             fileCount = uniqueFiles.size;
-            languages = Array.from(uniqueLanguages);
           }
         } catch (error) {
           // Silently ignore metadata errors - table may be corrupted or incompatible
@@ -97,7 +93,6 @@ export class KnowledgeBaseService {
           chunkCount: count,
           fileCount,
           lastIngestion,
-          languages,
         });
       }
 

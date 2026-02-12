@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
 import { registerRoutes } from '../routes.js';
-import type { KnowledgeBaseService } from '../../../domains/knowledgebase/codebase.service.js';
+import type { KnowledgeBaseService } from '../../../domains/knowledgebase/knowledgebase.service.js';
 import type { SearchService } from '../../../domains/search/search.service.js';
 import type {
   KnowledgeBaseMetadata,
@@ -48,7 +48,6 @@ describe('Fastify API Routes', () => {
           chunkCount: 100,
           fileCount: 10,
           lastIngestion: '2024-01-01T00:00:00Z',
-          languages: ['typescript', 'javascript'],
         },
       ];
 
@@ -90,7 +89,7 @@ describe('Fastify API Routes', () => {
             filePath: '/path/to/file.ts',
             startLine: 10,
             endLine: 20,
-            language: 'typescript',
+            documentType: 'markdown',
             chunkType: 'function',
             content: 'function test() {}',
             similarityScore: 0.95,
@@ -143,7 +142,7 @@ describe('Fastify API Routes', () => {
       expect(mockSearchService.search).toHaveBeenCalledWith({
         query: 'test',
         knowledgeBaseName: 'my-knowledgebase',
-        language: 'typescript',
+        documentType: 'markdown',
         maxResults: 10,
       });
     });
@@ -217,9 +216,9 @@ describe('Fastify API Routes', () => {
         chunkCount: 100,
         fileCount: 10,
         lastIngestion: '2024-01-01T00:00:00Z',
-        languages: [
-          { language: 'typescript', fileCount: 8, chunkCount: 80 },
-          { language: 'javascript', fileCount: 2, chunkCount: 20 },
+        documentTypes: [
+          { documentType: 'markdown', fileCount: 8, chunkCount: 80 },
+          { documentType: 'pdf', fileCount: 2, chunkCount: 20 },
         ],
         chunkTypes: [
           { type: 'function', count: 60 },

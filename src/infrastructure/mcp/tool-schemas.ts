@@ -1,7 +1,7 @@
 /**
  * MCP Tool Schemas
  * 
- * JSON schemas for all MCP tools exposed by the codebase memory server.
+ * JSON schemas for all MCP tools exposed by the knowledge base server.
  * These schemas define input validation rules and output formats for each tool.
  * 
  * Validates: Requirements 15.1
@@ -53,15 +53,8 @@ export const LIST_CODEBASES_SCHEMA = {
               description: 'ISO 8601 timestamp of the last ingestion',
               format: 'date-time',
             },
-            languages: {
-              type: 'array',
-              description: 'List of programming languages detected in the codebase',
-              items: {
-                type: 'string',
-              },
-            },
           },
-          required: ['name', 'path', 'chunkCount', 'fileCount', 'lastIngestion', 'languages'],
+          required: ['name', 'path', 'chunkCount', 'fileCount', 'lastIngestion'],
           additionalProperties: false,
         },
       },
@@ -92,10 +85,10 @@ export const SEARCH_CODEBASES_SCHEMA = {
         type: 'string',
         description: 'Optional filter to search only within a specific codebase',
       },
-      language: {
+      documentType: {
         type: 'string',
-        description: 'Optional filter to search only for code in a specific language',
-        enum: ['csharp', 'java', 'javascript', 'typescript', 'python'],
+        description: 'Optional filter to search only for documents of a specific type',
+        enum: ['pdf', 'docx', 'pptx', 'xlsx', 'html', 'markdown', 'text', 'audio'],
       },
       maxResults: {
         type: 'number',
@@ -131,15 +124,14 @@ export const SEARCH_CODEBASES_SCHEMA = {
               description: 'Ending line number of the code chunk (1-indexed)',
               minimum: 1,
             },
-            language: {
+            documentType: {
               type: 'string',
-              description: 'Programming language of the code chunk',
-              enum: ['csharp', 'java', 'javascript', 'typescript', 'python'],
+              description: 'Document type of the chunk',
+              enum: ['pdf', 'docx', 'pptx', 'xlsx', 'html', 'markdown', 'text', 'audio'],
             },
             chunkType: {
               type: 'string',
               description: 'Type of code construct',
-              enum: ['function', 'class', 'method', 'interface', 'property', 'field'],
             },
             content: {
               type: 'string',
@@ -160,7 +152,7 @@ export const SEARCH_CODEBASES_SCHEMA = {
             'filePath',
             'startLine',
             'endLine',
-            'language',
+            'documentType',
             'chunkType',
             'content',
             'similarityScore',
@@ -232,28 +224,28 @@ export const GET_CODEBASE_STATS_SCHEMA = {
         description: 'ISO 8601 timestamp of the last ingestion',
         format: 'date-time',
       },
-      languages: {
+      documentTypes: {
         type: 'array',
-        description: 'Language distribution statistics',
+        description: 'Document type distribution statistics',
         items: {
           type: 'object',
           properties: {
-            language: {
+            documentType: {
               type: 'string',
-              description: 'Programming language name',
+              description: 'Document type name',
             },
             fileCount: {
               type: 'number',
-              description: 'Number of files in this language',
+              description: 'Number of files of this type',
               minimum: 0,
             },
             chunkCount: {
               type: 'number',
-              description: 'Number of chunks in this language',
+              description: 'Number of chunks of this type',
               minimum: 0,
             },
           },
-          required: ['language', 'fileCount', 'chunkCount'],
+          required: ['documentType', 'fileCount', 'chunkCount'],
           additionalProperties: false,
         },
       },
@@ -266,7 +258,6 @@ export const GET_CODEBASE_STATS_SCHEMA = {
             type: {
               type: 'string',
               description: 'Type of code construct',
-              enum: ['function', 'class', 'method', 'interface', 'property', 'field'],
             },
             count: {
               type: 'number',
@@ -284,7 +275,7 @@ export const GET_CODEBASE_STATS_SCHEMA = {
         minimum: 0,
       },
     },
-    required: ['name', 'path', 'chunkCount', 'fileCount', 'lastIngestion', 'languages', 'chunkTypes', 'sizeBytes'],
+    required: ['name', 'path', 'chunkCount', 'fileCount', 'lastIngestion', 'documentTypes', 'chunkTypes', 'sizeBytes'],
     additionalProperties: false,
   },
 } as const;
@@ -346,14 +337,13 @@ export interface ListCodebasesOutput {
     chunkCount: number;
     fileCount: number;
     lastIngestion: string;
-    languages: string[];
   }>;
 }
 
 export interface SearchCodebasesInput {
   query: string;
   codebaseName?: string;
-  language?: 'csharp' | 'java' | 'javascript' | 'typescript' | 'python';
+  documentType?: 'pdf' | 'docx' | 'pptx' | 'xlsx' | 'html' | 'markdown' | 'text' | 'audio';
   maxResults?: number;
 }
 
@@ -362,7 +352,7 @@ export interface SearchCodebasesOutput {
     filePath: string;
     startLine: number;
     endLine: number;
-    language: string;
+    documentType: string;
     chunkType: string;
     content: string;
     similarityScore: number;
@@ -382,8 +372,8 @@ export interface GetCodebaseStatsOutput {
   chunkCount: number;
   fileCount: number;
   lastIngestion: string;
-  languages: Array<{
-    language: string;
+  documentTypes: Array<{
+    documentType: string;
     fileCount: number;
     chunkCount: number;
   }>;

@@ -4,7 +4,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { KnowledgeBaseService } from '../../domains/knowledgebase/codebase.service.js';
+import type { KnowledgeBaseService } from '../../domains/knowledgebase/knowledgebase.service.jsce.js';
 import type { SearchService } from '../../domains/search/search.service.js';
 import type { IngestionService } from '../../domains/ingestion/ingestion.service.js';
 import type { Config } from '../../shared/types/index.js';

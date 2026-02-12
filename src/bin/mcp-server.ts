@@ -16,7 +16,7 @@
 import { loadConfig } from '../shared/config/index.js';
 import { LanceDBClientWrapper } from '../infrastructure/lancedb/lancedb.client.js';
 import { HuggingFaceEmbeddingService } from '../domains/embedding/index.js';
-import { KnowledgeBaseService } from '../domains/knowledgebase/codebase.service.js';
+import { KnowledgeBaseService } from '../domains/knowledgebase/knowledgebase.service.jsce.js';
 import { SearchService } from '../domains/search/search.service.js';
 import { MCPServer } from '../infrastructure/mcp/mcp-server.js';
 

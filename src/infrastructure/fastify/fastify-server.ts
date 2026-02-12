@@ -14,7 +14,7 @@ import fastifyFormbody from '@fastify/formbody';
 import handlebars from 'handlebars';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import type { KnowledgeBaseService } from '../../domains/knowledgebase/codebase.service.js';
+import type { KnowledgeBaseService } from '../../domains/knowledgebase/knowledgebase.service.jsce.js';
 import type { SearchService } from '../../domains/search/search.service.js';
 import type { IngestionService } from '../../domains/ingestion/ingestion.service.js';
 import type { Config } from '../../shared/types/index.js';

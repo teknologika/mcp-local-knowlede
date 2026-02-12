@@ -92,7 +92,7 @@ export class LanceDBClientWrapper {
   }
 
   /**
-   * Create a new table for a codebase
+   * Create a new table for a knowledge base
    */
   async createTable(knowledgeBaseName: string, data: any[], metadata?: Record<string, any>): Promise<void> {
     await this.ensureInitialized();
@@ -135,7 +135,7 @@ export class LanceDBClientWrapper {
   }
 
   /**
-   * Get or create a table for a codebase
+   * Get or create a table for a knowledge base
    * Returns null if table doesn't exist (caller should create it with actual data)
    */
   async getOrCreateTable(knowledgeBaseName: string): Promise<Table | null> {
@@ -240,7 +240,7 @@ export class LanceDBClientWrapper {
   }
 
   /**
-   * Delete a table by codebase name
+   * Delete a table by knowledge base name
    */
   async deleteTable(knowledgeBaseName: string): Promise<void> {
     await this.ensureInitialized();

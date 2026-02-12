@@ -31,65 +31,31 @@
 
 ### 1.5 Update Shared Types
 - [x] 1.5.1 Remove Language type from src/shared/types/index.ts
-- [~] 1.5.2 Remove code-specific ChunkType values
-- [~] 1.5.3 Add DocumentType type (pdf, docx, pptx, xlsx, html, markdown, text, audio)
-- [~] 1.5.4 Add document-specific ChunkType values (paragraph, section, table, heading)
-- [~] 1.5.5 Update SearchResult interface
-- [~] 1.5.6 Update ChunkMetadata interface
+- [x] 1.5.2 Remove code-specific ChunkType values
+- [x] 1.5.3 Add DocumentType type (pdf, docx, pptx, xlsx, html, markdown, text, audio)
+- [x] 1.5.4 Add document-specific ChunkType values (paragraph, section, table, heading)
+- [x] 1.5.5 Update SearchResult interface
+- [x] 1.5.6 Update ChunkMetadata interface
 
-## Phase 2: Python Bridge Infrastructure
+## Phase 2: docling-sdk Integration
 
-### 2.1 Create Python Package Structure
-- [ ] 2.1.1 Create python-package/ directory
-- [ ] 2.1.2 Create pyproject.toml with project metadata and dependencies
-- [ ] 2.1.3 Create python-package/mcp_knowledge_docling/__init__.py
-- [ ] 2.1.4 Add README.md and LICENSE to python-package/
+### 2.1 Add docling-sdk Dependency
+- [x] 2.1.1 Add docling-sdk to package.json dependencies
+- [x] 2.1.2 Run npm install to install docling-sdk
+- [x] 2.1.3 Verify docling-sdk installation
 
-### 2.2 Implement Python Document Converter
-- [ ] 2.2.1 Create python-package/mcp_knowledge_docling/converter.py
-- [ ] 2.2.2 Implement convert_document function with DocumentConverter
-- [ ] 2.2.3 Add metadata extraction (title, page count, word count, images, tables)
-- [ ] 2.2.4 Add error handling for conversion failures
-- [ ] 2.2.5 Support all document formats (PDF, DOCX, PPTX, XLSX, HTML, MD, TXT)
-- [ ] 2.2.6 Add audio transcription support with Whisper ASR
+### 2.2 Create Docling Installation Check Script
+- [x] 2.2.1 Create scripts/check-docling.js
+- [x] 2.2.2 Implement check for Python Docling CLI availability
+- [x] 2.2.3 Add helpful error messages with installation instructions
+- [x] 2.2.4 Add package.json postinstall script to run check
+- [x] 2.2.5 Test check script on systems with/without Docling
 
-### 2.3 Implement Python Document Chunker
-- [ ] 2.3.1 Create python-package/mcp_knowledge_docling/chunker.py
-- [ ] 2.3.2 Implement HybridChunker initialization with tokenizer
-- [ ] 2.3.3 Implement chunk_document function
-- [ ] 2.3.4 Add contextualization for chunks (heading hierarchy)
-- [ ] 2.3.5 NO fallback - return error if HybridChunker fails
-
-### 2.4 Implement Python CLI Entry Point
-- [ ] 2.4.1 Create python-package/mcp_knowledge_docling/cli.py
-- [ ] 2.4.2 Implement stdin/stdout JSON communication
-- [ ] 2.4.3 Route to converter or chunker based on action
-- [ ] 2.4.4 Add error handling and exit codes
-
-### 2.5 Create TypeScript Python Bridge
-- [ ] 2.5.1 Create src/infrastructure/python/ directory
-- [ ] 2.5.2 Implement python-bridge.ts with PythonBridge class
-- [ ] 2.5.3 Add uvx process spawning
-- [ ] 2.5.4 Implement stdin/stdout JSON communication
-- [ ] 2.5.5 Add process lifecycle management
-- [ ] 2.5.6 Add timeout handling (30s default)
-- [ ] 2.5.7 Add retry logic for transient failures
-- [ ] 2.5.8 Add uv availability check with helpful error messages
-
-### 2.6 Create Installation Scripts
-- [ ] 2.6.1 Create scripts/install-uv.js for auto-installing uv
-- [ ] 2.6.2 Add platform detection (Windows/macOS/Linux)
-- [ ] 2.6.3 Add installation commands for each platform
-- [ ] 2.6.4 Add fallback instructions if auto-install fails
-- [ ] 2.6.5 Create scripts/check-deps.js for manual verification
-- [ ] 2.6.6 Update package.json with postinstall script
-
-### 2.7 Add Python Bridge Tests
-- [ ] 2.7.1 Test uvx process spawning
-- [ ] 2.7.2 Test JSON communication protocol
-- [ ] 2.7.3 Test error handling
-- [ ] 2.7.4 Test timeout scenarios
-- [ ] 2.7.5 Test process cleanup
+### 2.3 Update Documentation for Docling Setup
+- [x] 2.3.1 Add Docling installation instructions to README.md
+- [x] 2.3.2 Document "pip install docling" requirement
+- [x] 2.3.3 Add troubleshooting section for Docling issues
+- [x] 2.3.4 Update .env.example with Docling-related notes
 
 ## Phase 3: Document Processing Services
 
@@ -102,25 +68,30 @@
 
 ### 3.2 Implement Document Converter Service
 - [ ] 3.2.1 Create document-converter.service.ts
-- [ ] 3.2.2 Implement document type detection by extension
-- [ ] 3.2.3 Route to Python bridge for Docling conversion
-- [ ] 3.2.4 Support all document formats (PDF, DOCX, PPTX, XLSX, HTML, MD, TXT)
-- [ ] 3.2.5 Add audio file support (MP3, WAV, M4A, FLAC)
-- [ ] 3.2.6 Extract and normalize metadata
-- [ ] 3.2.7 Add progress reporting for long conversions
-- [ ] 3.2.8 Handle conversion errors
+- [ ] 3.2.2 Initialize Docling client from docling-sdk in CLI mode
+- [ ] 3.2.3 Implement document type detection by extension
+- [ ] 3.2.4 Implement convertDocument() using docling-sdk client.convert()
+- [ ] 3.2.5 Support all document formats (PDF, DOCX, PPTX, XLSX, HTML, MD, TXT)
+- [ ] 3.2.6 Add audio file support (MP3, WAV, M4A, FLAC)
+- [ ] 3.2.7 Extract and normalize metadata from Docling result
+- [ ] 3.2.8 Add timeout handling (30s default)
+- [ ] 3.2.9 Implement fallback to simple text extraction on conversion failure
+- [ ] 3.2.10 Add progress reporting for long conversions
+- [ ] 3.2.11 Handle conversion errors with descriptive messages
 
 ### 3.3 Implement Document Chunker Service
 - [ ] 3.3.1 Create document-chunker.service.ts
-- [ ] 3.3.2 Use Docling HybridChunker exclusively via Python bridge
-- [ ] 3.3.3 Configure max_tokens: 512, merge_peers: true
-- [ ] 3.3.4 Use sentence-transformers/all-MiniLM-L6-v2 tokenizer
-- [ ] 3.3.5 NO fallback - fail if HybridChunker fails
-- [ ] 3.3.6 Add contextualization (heading hierarchy)
+- [ ] 3.3.2 Initialize Docling client from docling-sdk
+- [ ] 3.3.3 Implement chunkDocument() using docling-sdk client.chunk()
+- [ ] 3.3.4 Configure HybridChunker: max_tokens=512, chunker_type='hybrid'
+- [ ] 3.3.5 Extract chunk metadata (type, token count, heading path)
+- [ ] 3.3.6 Implement fallback to simple text chunking (chunk_size=1000, overlap=200)
+- [ ] 3.3.7 Add contextualization (heading hierarchy) from Docling metadata
+- [ ] 3.3.8 Handle chunking errors gracefully with fallback
 
 ### 3.4 Add Document Service Tests
 - [ ] 3.4.1 Test document type detection
-- [ ] 3.4.2 Test PDF conversion
+- [ ] 3.4.2 Test PDF conversion with docling-sdk
 - [ ] 3.4.3 Test DOCX conversion
 - [ ] 3.4.4 Test PPTX conversion
 - [ ] 3.4.5 Test XLSX conversion
@@ -128,26 +99,29 @@
 - [ ] 3.4.7 Test Markdown conversion
 - [ ] 3.4.8 Test text file conversion
 - [ ] 3.4.9 Test audio transcription
-- [ ] 3.4.10 Test HybridChunker integration
-- [ ] 3.4.11 Test error handling (no fallback)
+- [ ] 3.4.10 Test HybridChunker integration via docling-sdk
+- [ ] 3.4.11 Test fallback chunking when HybridChunker fails
 - [ ] 3.4.12 Test metadata extraction
+- [ ] 3.4.13 Test timeout handling
+- [ ] 3.4.14 Test error handling with descriptive messages
 
 ## Phase 4: Update Ingestion Pipeline
 
 ### 4.1 Update File Scanner
 - [ ] 4.1.1 Update src/domains/ingestion/file-scanner.service.ts with document patterns
 - [ ] 4.1.2 Remove code file patterns
-- [ ] 4.1.3 Add DOCUMENT_EXTENSIONS constant
+- [ ] 4.1.3 Add DOCUMENT_EXTENSIONS constant (.pdf, .docx, .pptx, .xlsx, .html, .md, .txt, .mp3, .wav, .m4a, .flac)
 - [ ] 4.1.4 Update file classification for documents
-- [ ] 4.1.5 Add document type detection
+- [ ] 4.1.5 Add document type detection by extension
 
 ### 4.2 Update Ingestion Service
 - [ ] 4.2.1 Remove tree-sitter parsing logic from ingestion.service.ts
-- [ ] 4.2.2 Add document converter integration
-- [ ] 4.2.3 Add document chunker integration (HybridChunker only)
+- [ ] 4.2.2 Add DocumentConverterService integration
+- [ ] 4.2.3 Add DocumentChunkerService integration
 - [ ] 4.2.4 Update progress reporting for documents
-- [ ] 4.2.5 Add document type to metadata
-- [ ] 4.2.6 Fail document ingestion if HybridChunker fails (no fallback)
+- [ ] 4.2.5 Add document type to chunk metadata
+- [ ] 4.2.6 Use fallback chunking if HybridChunker fails
+- [ ] 4.2.7 Update batch processing for documents
 - [ ] 4.2.7 Update batch processing for documents
 - [ ] 4.2.8 Add conversion timeout handling
 - [ ] 4.2.9 Add retry logic for conversions (not chunking)
@@ -370,12 +344,7 @@
 - [ ] 11.2.3 Test built package locally
 - [ ] 11.2.4 Run npm pack and test installation
 
-### 11.3 Python Package Publishing
-- [ ] 11.3.1 Build Python package: python -m build
-- [ ] 11.3.2 Test Python package locally
-- [ ] 11.3.3 Publish to PyPI: twine upload dist/*
-
-### 11.4 Pre-publish Checklist
+### 11.3 Pre-publish Checklist
 - [ ] 11.4.1 Verify all tests passing
 - [ ] 11.4.2 Verify documentation complete
 - [ ] 11.4.3 Verify migration guide ready

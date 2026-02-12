@@ -3,7 +3,7 @@
  * 
  * Coordinates the complete ingestion pipeline:
  * - File scanning
- * - Parsing with Tree-sitter
+ * - Document conversion and chunking
  * - Embedding generation
  * - Storage in LanceDB
  * 
@@ -61,7 +61,7 @@ export class IngestionService {
   }
 
   /**
-   * Ingest a codebase
+   * Ingest a knowledge base
    * 
    * @param params - Ingestion parameters
    * @param progressCallback - Optional callback for progress updates
@@ -76,7 +76,7 @@ export class IngestionService {
     });
     const { path: codebasePath, name: codebaseName } = params;
 
-    this.logger.info('Starting codebase ingestion', {
+    this.logger.info('Starting knowledge base ingestion', {
       codebaseName,
       codebasePath,
     });
@@ -125,16 +125,16 @@ export class IngestionService {
       });
 
       // TODO: Phase 2 will be replaced with document conversion and chunking
-      // For now, we skip parsing since tree-sitter has been removed
+      // For now, we skip document processing since it hasn't been implemented yet
       const allChunks: Chunk[] = [];
 
-      this.logger.warn('Parsing phase temporarily disabled - tree-sitter removed', {
+      this.logger.warn('Document processing phase temporarily disabled', {
         supportedFiles: supportedFiles.length,
       });
 
       parseTimer.end();
 
-      this.logger.info('Parsing phase skipped (tree-sitter removed)', {
+      this.logger.info('Document processing phase skipped (not yet implemented)', {
         totalChunks: allChunks.length,
       });
 

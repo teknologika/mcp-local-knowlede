@@ -1,16 +1,21 @@
 /**
- * Shared type definitions for the codebase memory MCP server
+ * Shared type definitions for the knowledge base MCP server
  */
-
-/**
- * Types of code chunks that can be extracted
- */
-export type ChunkType = "function" | "class" | "method" | "interface" | "property" | "field";
 
 /**
  * Log levels for structured logging
  */
 export type LogLevel = "debug" | "info" | "warn" | "error";
+
+/**
+ * Document types supported by the knowledge base
+ */
+export type DocumentType = "pdf" | "docx" | "pptx" | "xlsx" | "html" | "markdown" | "text" | "audio";
+
+/**
+ * Chunk types for document content classification
+ */
+export type ChunkType = "paragraph" | "section" | "table" | "heading" | "list" | "code";
 
 /**
  * Configuration interface for the entire system
@@ -52,6 +57,16 @@ export interface Config {
 }
 
 /**
+ * Chunk metadata for document chunks
+ */
+export interface ChunkMetadata {
+  chunkType: ChunkType;
+  hasContext: boolean;
+  headingPath?: string[];
+  pageNumber?: number;
+}
+
+/**
  * Code chunk with metadata
  */
 export interface Chunk {
@@ -64,7 +79,7 @@ export interface Chunk {
 }
 
 /**
- * Codebase metadata
+ * Knowledge base metadata
  */
 export interface KnowledgeBaseMetadata {
   name: string;
@@ -75,16 +90,25 @@ export interface KnowledgeBaseMetadata {
 }
 
 /**
+ * Search result metadata
+ */
+export interface SearchResultMetadata {
+  filePath: string;
+  documentType: DocumentType;
+  chunkType: ChunkType;
+  chunkIndex: number;
+  isTest: boolean;
+  pageNumber?: number;
+  headingPath?: string[];
+}
+
+/**
  * Search result
  */
 export interface SearchResult {
-  filePath: string;
-  startLine: number;
-  endLine: number;
-  chunkType: string;
   content: string;
-  similarityScore: number;
-  knowledgeBaseName: string;
+  score: number;
+  metadata: SearchResultMetadata;
 }
 
 /**
@@ -95,6 +119,7 @@ export interface SearchParams {
   knowledgeBaseName?: string;
   maxResults?: number;
   excludeTests?: boolean;
+  documentType?: DocumentType;
 }
 
 /**
@@ -115,7 +140,7 @@ export interface ChunkTypeStats {
 }
 
 /**
- * Detailed codebase statistics
+ * Detailed knowledge base statistics
  */
 export interface KnowledgeBaseStats {
   name: string;

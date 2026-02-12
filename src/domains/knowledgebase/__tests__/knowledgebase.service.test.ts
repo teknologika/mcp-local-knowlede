@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { KnowledgeBaseService, KnowledgeBaseError } from '../codebase.service.js';
+import { KnowledgeBaseService, KnowledgeBaseError } from '../knowledgebase.service.js';
 import { LanceDBClientWrapper } from '../../../infrastructure/lancedb/lancedb.client.js';
 import type { Config } from '../../../shared/types/index.js';
 import { DEFAULT_CONFIG } from '../../../shared/config/config.js';
@@ -22,6 +22,7 @@ describe('KnowledgeBaseService', () => {
       getOrCreateTable: vi.fn(),
       tableExists: vi.fn(),
       deleteTable: vi.fn(),
+      getConnection: vi.fn(),
     } as any;
 
     service = new KnowledgeBaseService(mockLanceClient, config);
@@ -46,7 +47,6 @@ describe('KnowledgeBaseService', () => {
             path: '/path/to/project',
             fileCount: 10,
             lastIngestion: '2024-01-01T00:00:00Z',
-            languages: ['typescript', 'javascript'],
           },
         },
       ];
@@ -59,30 +59,33 @@ describe('KnowledgeBaseService', () => {
               {
                 _path: '/path/to/project',
                 _lastIngestion: '2024-01-01T00:00:00Z',
-                language: 'typescript',
                 filePath: '/path/to/file1.ts',
               },
             ]),
           }),
           select: vi.fn().mockReturnValue({
             toArray: vi.fn().mockResolvedValue([
-              { language: 'typescript', filePath: '/path/to/file1.ts' },
-              { language: 'typescript', filePath: '/path/to/file2.ts' },
-              { language: 'javascript', filePath: '/path/to/file3.js' },
-              { language: 'javascript', filePath: '/path/to/file4.js' },
-              { language: 'javascript', filePath: '/path/to/file5.js' },
-              { language: 'javascript', filePath: '/path/to/file6.js' },
-              { language: 'javascript', filePath: '/path/to/file7.js' },
-              { language: 'javascript', filePath: '/path/to/file8.js' },
-              { language: 'javascript', filePath: '/path/to/file9.js' },
-              { language: 'javascript', filePath: '/path/to/file10.js' },
+              { filePath: '/path/to/file1.ts' },
+              { filePath: '/path/to/file2.ts' },
+              { filePath: '/path/to/file3.js' },
+              { filePath: '/path/to/file4.js' },
+              { filePath: '/path/to/file5.js' },
+              { filePath: '/path/to/file6.js' },
+              { filePath: '/path/to/file7.js' },
+              { filePath: '/path/to/file8.js' },
+              { filePath: '/path/to/file9.js' },
+              { filePath: '/path/to/file10.js' },
             ]),
           }),
         }),
       };
 
+      const mockConnection = {
+        openTable: vi.fn().mockResolvedValue(mockTable),
+      };
+
       vi.mocked(mockLanceClient.listTables).mockResolvedValue(mockTables);
-      vi.mocked(mockLanceClient.getOrCreateTable).mockResolvedValue(mockTable as any);
+      vi.mocked(mockLanceClient.getConnection).mockReturnValue(mockConnection as any);
 
       const result = await service.listKnowledgeBases();
 
@@ -93,7 +96,6 @@ describe('KnowledgeBaseService', () => {
         chunkCount: 50,
         fileCount: 10,
         lastIngestion: '2024-01-01T00:00:00Z',
-        languages: ['typescript', 'javascript'],
       });
     });
 

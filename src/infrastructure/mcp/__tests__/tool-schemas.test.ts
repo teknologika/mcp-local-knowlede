@@ -59,7 +59,6 @@ describe('MCP Tool Schemas', () => {
             chunkCount: 100,
             fileCount: 20,
             lastIngestion: '2024-01-01T00:00:00Z',
-            languages: ['typescript', 'javascript'],
           },
         ],
       };
@@ -89,7 +88,6 @@ describe('MCP Tool Schemas', () => {
             chunkCount: -1,
             fileCount: 20,
             lastIngestion: '2024-01-01T00:00:00Z',
-            languages: ['typescript'],
           },
         ],
       };
@@ -117,8 +115,8 @@ describe('MCP Tool Schemas', () => {
       const validate = ajv.compile(SEARCH_CODEBASES_SCHEMA.inputSchema);
       const input = {
         query: 'database connection',
-        knowledgeBaseName: 'my-project',
-        language: 'typescript',
+        codebaseName: 'my-project',
+        documentType: 'markdown',
         maxResults: 25,
       };
       expect(validate(input)).toBe(true);
@@ -129,11 +127,11 @@ describe('MCP Tool Schemas', () => {
       expect(validate({ query: '' })).toBe(false);
     });
 
-    it('should reject invalid language', () => {
+    it('should reject invalid documentType', () => {
       const validate = ajv.compile(SEARCH_CODEBASES_SCHEMA.inputSchema);
       const input = {
         query: 'test',
-        language: 'ruby', // Not in enum
+        documentType: 'invalid', // Not in enum
       };
       expect(validate(input)).toBe(false);
     });
@@ -164,11 +162,11 @@ describe('MCP Tool Schemas', () => {
             filePath: 'src/auth.ts',
             startLine: 10,
             endLine: 25,
-            language: 'typescript',
+            documentType: 'markdown',
             chunkType: 'function',
             content: 'function authenticate() { ... }',
             similarityScore: 0.95,
-            knowledgeBaseName: 'my-project',
+            codebaseName: 'my-project',
           },
         ],
         totalResults: 1,
@@ -185,11 +183,11 @@ describe('MCP Tool Schemas', () => {
             filePath: 'src/auth.ts',
             startLine: 10,
             endLine: 25,
-            language: 'typescript',
+            documentType: 'markdown',
             chunkType: 'function',
             content: 'function authenticate() { ... }',
             similarityScore: 1.5, // Above maximum
-            knowledgeBaseName: 'my-project',
+            codebaseName: 'my-project',
           },
         ],
         totalResults: 1,
@@ -206,11 +204,11 @@ describe('MCP Tool Schemas', () => {
             filePath: 'src/auth.ts',
             startLine: 0, // Below minimum
             endLine: 25,
-            language: 'typescript',
+            documentType: 'markdown',
             chunkType: 'function',
             content: 'function authenticate() { ... }',
             similarityScore: 0.95,
-            knowledgeBaseName: 'my-project',
+            codebaseName: 'my-project',
           },
         ],
         totalResults: 1,
@@ -254,14 +252,14 @@ describe('MCP Tool Schemas', () => {
         chunkCount: 100,
         fileCount: 20,
         lastIngestion: '2024-01-01T00:00:00Z',
-        languages: [
+        documentTypes: [
           {
-            language: 'typescript',
+            documentType: 'markdown',
             fileCount: 15,
             chunkCount: 75,
           },
           {
-            language: 'javascript',
+            documentType: 'pdf',
             fileCount: 5,
             chunkCount: 25,
           },
@@ -291,26 +289,6 @@ describe('MCP Tool Schemas', () => {
         name: 'my-project',
         path: '/path/to/project',
         // Missing other required fields
-      };
-      expect(validate(output)).toBe(false);
-    });
-
-    it('should reject output with invalid chunk type', () => {
-      const validate = ajv.compile(GET_CODEBASE_STATS_SCHEMA.outputSchema);
-      const output = {
-        name: 'my-project',
-        path: '/path/to/project',
-        chunkCount: 100,
-        fileCount: 20,
-        lastIngestion: '2024-01-01T00:00:00Z',
-        languages: [],
-        chunkTypes: [
-          {
-            type: 'invalid-type', // Not in enum
-            count: 50,
-          },
-        ],
-        sizeBytes: 50000,
       };
       expect(validate(output)).toBe(false);
     });
@@ -460,38 +438,16 @@ describe('MCP Tool Schemas', () => {
             chunkCount: -1,
             fileCount: 0,
             lastIngestion: '2024-01-01T00:00:00Z',
-            languages: [],
           },
         ],
       };
       expect(validate(output)).toBe(false);
     });
 
-    it('should enforce enum values on language parameter', () => {
+    it('should enforce enum values on documentType parameter', () => {
       const validate = ajv.compile(SEARCH_CODEBASES_SCHEMA.inputSchema);
-      expect(validate({ query: 'test', language: 'typescript' })).toBe(true);
-      expect(validate({ query: 'test', language: 'ruby' })).toBe(false);
-    });
-
-    it('should enforce enum values on chunkType in output', () => {
-      const validate = ajv.compile(SEARCH_CODEBASES_SCHEMA.outputSchema);
-      const output = {
-        results: [
-          {
-            filePath: 'test.ts',
-            startLine: 1,
-            endLine: 10,
-            language: 'typescript',
-            chunkType: 'invalid',
-            content: 'test',
-            similarityScore: 0.5,
-            knowledgeBaseName: 'test',
-          },
-        ],
-        totalResults: 1,
-        queryTime: 10,
-      };
-      expect(validate(output)).toBe(false);
+      expect(validate({ query: 'test', documentType: 'markdown' })).toBe(true);
+      expect(validate({ query: 'test', documentType: 'invalid' })).toBe(false);
     });
 
     it('should enforce range on similarityScore', () => {
@@ -502,11 +458,11 @@ describe('MCP Tool Schemas', () => {
             filePath: 'test.ts',
             startLine: 1,
             endLine: 10,
-            language: 'typescript',
+            documentType: 'markdown',
             chunkType: 'function',
             content: 'test',
             similarityScore: score,
-            knowledgeBaseName: 'test',
+            codebaseName: 'test',
           },
         ],
         totalResults: 1,

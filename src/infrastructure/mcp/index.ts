@@ -1,7 +1,7 @@
 /**
  * MCP Infrastructure
  * 
- * Exports MCP tool schemas, server implementation, and related types for the codebase memory server.
+ * Exports MCP tool schemas, server implementation, and related types for the knowledge base server.
  */
 
 export * from './tool-schemas.js';
