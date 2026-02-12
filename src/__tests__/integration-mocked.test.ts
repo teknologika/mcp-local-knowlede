@@ -21,13 +21,11 @@ import { tmpdir } from 'os';
 import Fastify from 'fastify';
 import { DEFAULT_CONFIG } from '../shared/config/config.js';
 import { createEmbeddingService } from '../domains/embedding/embedding.service.js';
-import { TreeSitterParsingService } from '../domains/parsing/tree-sitter-parsing.service.js';
 import { FileScannerService } from '../domains/ingestion/file-scanner.service.js';
-import { LanguageDetectionService } from '../domains/parsing/language-detection.service.js';
 import { registerRoutes } from '../infrastructure/fastify/routes.js';
 import { MCPServer } from '../infrastructure/mcp/mcp-server.js';
 import { createLogger } from '../shared/logging/logger.js';
-import type { Config, CodebaseMetadata, SearchResults } from '../shared/types/index.js';
+import type { Config, KnowledgeBaseMetadata, SearchResults } from '../shared/types/index.js';
 
 describe('Integration Tests (Mocked)', () => {
   let testDir: string;
@@ -110,17 +108,6 @@ export class UserManager {
       // Clean up
       rmSync(testCodebasePath, { recursive: true, force: true });
     });
-
-    it('should detect language from file extension', () => {
-      const languageDetection = new LanguageDetectionService();
-
-      expect(languageDetection.detectLanguage('file.ts')).toBe('typescript');
-      expect(languageDetection.detectLanguage('file.js')).toBe('javascript');
-      expect(languageDetection.detectLanguage('file.py')).toBe('python');
-      expect(languageDetection.detectLanguage('file.java')).toBe('java');
-      expect(languageDetection.detectLanguage('file.cs')).toBe('csharp');
-      expect(languageDetection.detectLanguage('file.md')).toBeNull();
-    });
   });
 
   describe('Embedding Service Integration', () => {
@@ -163,11 +150,11 @@ export class UserManager {
   describe('MCP Server Integration', () => {
     it('should initialize MCP server with services', () => {
       // Create mock services
-      const mockCodebaseService = {
-        listCodebases: vi.fn().mockResolvedValue([]),
-        getCodebaseStats: vi.fn(),
-        renameCodebase: vi.fn(),
-        deleteCodebase: vi.fn(),
+      const mockKnowledgeBaseService = {
+        listKnowledgeBases: vi.fn().mockResolvedValue([]),
+        getKnowledgeBaseStats: vi.fn(),
+        renameKnowledgeBase: vi.fn(),
+        deleteKnowledgeBase: vi.fn(),
         deleteChunkSet: vi.fn(),
       } as any;
 
@@ -179,7 +166,7 @@ export class UserManager {
         }),
       } as any;
 
-      const mcpServer = new MCPServer(mockCodebaseService, mockSearchService, testConfig);
+      const mcpServer = new MCPServer(mockKnowledgeBaseService, mockSearchService, testConfig);
 
       expect(mcpServer).toBeDefined();
       expect(typeof mcpServer.start).toBe('function');
@@ -187,9 +174,9 @@ export class UserManager {
     });
 
     it('should verify MCP server can access services', async () => {
-      const mockCodebases: CodebaseMetadata[] = [
+      const mockKnowledgeBases: KnowledgeBaseMetadata[] = [
         {
-          name: 'test-codebase',
+          name: 'test-knowledgebase',
           path: '/test/path',
           chunkCount: 100,
           fileCount: 10,
@@ -198,10 +185,10 @@ export class UserManager {
         },
       ];
 
-      const mockCodebaseService = {
-        listCodebases: vi.fn().mockResolvedValue(mockCodebases),
-        getCodebaseStats: vi.fn().mockResolvedValue({
-          name: 'test-codebase',
+      const mockKnowledgeBaseService = {
+        listKnowledgeBases: vi.fn().mockResolvedValue(mockKnowledgeBases),
+        getKnowledgeBaseStats: vi.fn().mockResolvedValue({
+          name: 'test-knowledgebase',
           path: '/test/path',
           chunkCount: 100,
           fileCount: 10,
@@ -210,8 +197,8 @@ export class UserManager {
           chunkTypes: [{ type: 'function', count: 100 }],
           sizeBytes: 50000,
         }),
-        renameCodebase: vi.fn(),
-        deleteCodebase: vi.fn(),
+        renameKnowledgeBase: vi.fn(),
+        deleteKnowledgeBase: vi.fn(),
         deleteChunkSet: vi.fn(),
       } as any;
 
@@ -225,7 +212,7 @@ export class UserManager {
             chunkType: 'function',
             content: 'function test() {}',
             similarityScore: 0.95,
-            codebaseName: 'test-codebase',
+            knowledgeBaseName: 'test-knowledgebase',
           },
         ],
         totalResults: 1,
@@ -237,14 +224,14 @@ export class UserManager {
       } as any;
 
       // Verify services work independently
-      const codebases = await mockCodebaseService.listCodebases();
-      expect(codebases).toEqual(mockCodebases);
+      const knowledgeBases = await mockKnowledgeBaseService.listKnowledgeBases();
+      expect(knowledgeBases).toEqual(mockKnowledgeBases);
 
       const searchResults = await mockSearchService.search({ query: 'test' });
       expect(searchResults).toEqual(mockSearchResults);
 
       // Verify MCP server can be created with these services
-      const mcpServer = new MCPServer(mockCodebaseService, mockSearchService, testConfig);
+      const mcpServer = new MCPServer(mockKnowledgeBaseService, mockSearchService, testConfig);
       expect(mcpServer).toBeDefined();
     });
   });
@@ -253,11 +240,11 @@ export class UserManager {
     it('should register all API routes', async () => {
       const fastify = Fastify({ logger: false });
 
-      const mockCodebaseService = {
-        listCodebases: vi.fn().mockResolvedValue([]),
-        getCodebaseStats: vi.fn(),
-        renameCodebase: vi.fn(),
-        deleteCodebase: vi.fn(),
+      const mockKnowledgeBaseService = {
+        listKnowledgeBases: vi.fn().mockResolvedValue([]),
+        getKnowledgeBaseStats: vi.fn(),
+        renameKnowledgeBase: vi.fn(),
+        deleteKnowledgeBase: vi.fn(),
         deleteChunkSet: vi.fn(),
       } as any;
 
@@ -269,7 +256,7 @@ export class UserManager {
         }),
       } as any;
 
-      await registerRoutes(fastify, mockCodebaseService, mockSearchService);
+      await registerRoutes(fastify, mockKnowledgeBaseService, mockSearchService);
 
       // Verify routes are registered by checking the route tree
       const routes = fastify.printRoutes();
@@ -283,7 +270,7 @@ export class UserManager {
     it('should handle API requests through routes', async () => {
       const fastify = Fastify({ logger: false });
 
-      const mockCodebases: CodebaseMetadata[] = [
+      const mockKnowledgeBases: KnowledgeBaseMetadata[] = [
         {
           name: 'test-api',
           path: '/test',
@@ -294,11 +281,11 @@ export class UserManager {
         },
       ];
 
-      const mockCodebaseService = {
-        listCodebases: vi.fn().mockResolvedValue(mockCodebases),
-        getCodebaseStats: vi.fn(),
-        renameCodebase: vi.fn(),
-        deleteCodebase: vi.fn(),
+      const mockKnowledgeBaseService = {
+        listKnowledgeBases: vi.fn().mockResolvedValue(mockKnowledgeBases),
+        getKnowledgeBaseStats: vi.fn(),
+        renameKnowledgeBase: vi.fn(),
+        deleteKnowledgeBase: vi.fn(),
         deleteChunkSet: vi.fn(),
       } as any;
 
@@ -310,7 +297,7 @@ export class UserManager {
         }),
       } as any;
 
-      await registerRoutes(fastify, mockCodebaseService, mockSearchService);
+      await registerRoutes(fastify, mockKnowledgeBaseService, mockSearchService);
 
       // Test GET /api/codebases
       const response = await fastify.inject({
@@ -320,8 +307,8 @@ export class UserManager {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.codebases).toEqual(mockCodebases);
-      expect(mockCodebaseService.listCodebases).toHaveBeenCalled();
+      expect(body.codebases).toEqual(mockKnowledgeBases);
+      expect(mockKnowledgeBaseService.listKnowledgeBases).toHaveBeenCalled();
 
       await fastify.close();
     });
@@ -339,18 +326,18 @@ export class UserManager {
             chunkType: 'function',
             content: 'function apiHandler() {}',
             similarityScore: 0.9,
-            codebaseName: 'test-api',
+            knowledgeBaseName: 'test-api',
           },
         ],
         totalResults: 1,
         queryTime: 25,
       };
 
-      const mockCodebaseService = {
-        listCodebases: vi.fn(),
-        getCodebaseStats: vi.fn(),
-        renameCodebase: vi.fn(),
-        deleteCodebase: vi.fn(),
+      const mockKnowledgeBaseService = {
+        listKnowledgeBases: vi.fn(),
+        getKnowledgeBaseStats: vi.fn(),
+        renameKnowledgeBase: vi.fn(),
+        deleteKnowledgeBase: vi.fn(),
         deleteChunkSet: vi.fn(),
       } as any;
 
@@ -358,7 +345,7 @@ export class UserManager {
         search: vi.fn().mockResolvedValue(mockSearchResults),
       } as any;
 
-      await registerRoutes(fastify, mockCodebaseService, mockSearchService);
+      await registerRoutes(fastify, mockKnowledgeBaseService, mockSearchService);
 
       // Test POST /api/search
       const response = await fastify.inject({
@@ -366,7 +353,7 @@ export class UserManager {
         url: '/api/search',
         payload: {
           query: 'api handler',
-          codebaseName: 'test-api',
+          knowledgeBaseName: 'test-api',
         },
       });
 
@@ -375,7 +362,7 @@ export class UserManager {
       expect(body).toEqual(mockSearchResults);
       expect(mockSearchService.search).toHaveBeenCalledWith({
         query: 'api handler',
-        codebaseName: 'test-api',
+        knowledgeBaseName: 'test-api',
       });
 
       await fastify.close();
@@ -384,11 +371,11 @@ export class UserManager {
 
   describe('Entry Points Non-Conflict', () => {
     it('should allow multiple Fastify servers on different ports', async () => {
-      const mockCodebaseService = {
-        listCodebases: vi.fn().mockResolvedValue([]),
-        getCodebaseStats: vi.fn(),
-        renameCodebase: vi.fn(),
-        deleteCodebase: vi.fn(),
+      const mockKnowledgeBaseService = {
+        listKnowledgeBases: vi.fn().mockResolvedValue([]),
+        getKnowledgeBaseStats: vi.fn(),
+        renameKnowledgeBase: vi.fn(),
+        deleteKnowledgeBase: vi.fn(),
         deleteChunkSet: vi.fn(),
       } as any;
 
@@ -403,8 +390,8 @@ export class UserManager {
       const fastify1 = Fastify({ logger: false });
       const fastify2 = Fastify({ logger: false });
 
-      await registerRoutes(fastify1, mockCodebaseService, mockSearchService);
-      await registerRoutes(fastify2, mockCodebaseService, mockSearchService);
+      await registerRoutes(fastify1, mockKnowledgeBaseService, mockSearchService);
+      await registerRoutes(fastify2, mockKnowledgeBaseService, mockSearchService);
 
       await fastify1.listen({ port: 8011, host: 'localhost' });
       await fastify2.listen({ port: 8012, host: 'localhost' });
@@ -430,16 +417,12 @@ export class UserManager {
     it('should validate complete ingestion workflow steps', () => {
       // This test validates that all components needed for ingestion exist
       const scanner = new FileScannerService();
-      const languageDetection = new LanguageDetectionService();
-      const parser = new TreeSitterParsingService();
 
       expect(scanner).toBeDefined();
-      expect(languageDetection).toBeDefined();
-      expect(parser).toBeDefined();
-
       expect(typeof scanner.scanDirectory).toBe('function');
-      expect(typeof languageDetection.detectLanguage).toBe('function');
-      expect(typeof parser.parseFile).toBe('function');
+      
+      // Note: Parsing service removed as part of tree-sitter removal
+      // Document processing will be added in later phases
     });
 
     it('should validate complete search workflow steps', () => {

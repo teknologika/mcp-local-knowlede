@@ -3,11 +3,6 @@
  */
 
 /**
- * Supported programming languages
- */
-export type Language = "csharp" | "java" | "javascript" | "typescript" | "python";
-
-/**
  * Types of code chunks that can be extracted
  */
 export type ChunkType = "function" | "class" | "method" | "interface" | "property" | "field";
@@ -44,6 +39,12 @@ export interface Config {
     defaultMaxResults: number;
     cacheTimeoutSeconds: number;
   };
+  document: {
+    conversionTimeout: number;
+    maxTokens: number;
+    chunkSize: number;
+    chunkOverlap: number;
+  };
   logging: {
     level: LogLevel;
   };
@@ -58,22 +59,19 @@ export interface Chunk {
   startLine: number;
   endLine: number;
   chunkType: ChunkType;
-  language: Language;
   filePath: string;
   isTestFile?: boolean;
-  isLibraryFile?: boolean;
 }
 
 /**
  * Codebase metadata
  */
-export interface CodebaseMetadata {
+export interface KnowledgeBaseMetadata {
   name: string;
   path: string;
   chunkCount: number;
   fileCount: number;
   lastIngestion: string; // ISO 8601 timestamp
-  languages: string[];
 }
 
 /**
@@ -83,11 +81,10 @@ export interface SearchResult {
   filePath: string;
   startLine: number;
   endLine: number;
-  language: string;
   chunkType: string;
   content: string;
   similarityScore: number;
-  codebaseName: string;
+  knowledgeBaseName: string;
 }
 
 /**
@@ -95,11 +92,9 @@ export interface SearchResult {
  */
 export interface SearchParams {
   query: string;
-  codebaseName?: string;
-  language?: string;
+  knowledgeBaseName?: string;
   maxResults?: number;
   excludeTests?: boolean;
-  excludeLibraries?: boolean;
 }
 
 /**
@@ -109,15 +104,6 @@ export interface SearchResults {
   results: SearchResult[];
   totalResults: number;
   queryTime: number;
-}
-
-/**
- * Language statistics
- */
-export interface LanguageStats {
-  language: string;
-  fileCount: number;
-  chunkCount: number;
 }
 
 /**
@@ -131,13 +117,12 @@ export interface ChunkTypeStats {
 /**
  * Detailed codebase statistics
  */
-export interface CodebaseStats {
+export interface KnowledgeBaseStats {
   name: string;
   path: string;
   chunkCount: number;
   fileCount: number;
   lastIngestion: string;
-  languages: LanguageStats[];
   chunkTypes: ChunkTypeStats[];
   sizeBytes: number;
 }
@@ -160,6 +145,5 @@ export interface IngestionStats {
   supportedFiles: number;
   unsupportedFiles: Map<string, number>;
   chunksCreated: number;
-  languages: Map<string, LanguageStats>;
   durationMs: number;
 }

@@ -24,11 +24,11 @@ export const SCHEMA_VERSION = '1.0.0';
  */
 export const DEFAULT_CONFIG: Config = {
   lancedb: {
-    persistPath: join(homedir(), '.codebase-memory', 'lancedb'),
+    persistPath: join(homedir(), '.knowledge-base', 'lancedb'),
   },
   embedding: {
     modelName: 'Xenova/all-MiniLM-L6-v2',
-    cachePath: join(homedir(), '.codebase-memory', 'models'),
+    cachePath: join(homedir(), '.knowledge-base', 'models'),
   },
   server: {
     port: 8008,
@@ -44,6 +44,12 @@ export const DEFAULT_CONFIG: Config = {
   search: {
     defaultMaxResults: 50,
     cacheTimeoutSeconds: 60,
+  },
+  document: {
+    conversionTimeout: 30000, // 30 seconds
+    maxTokens: 512,
+    chunkSize: 1000,
+    chunkOverlap: 200,
   },
   logging: {
     level: 'info',
@@ -110,6 +116,17 @@ const configSchema: JSONSchemaType<Config> = {
       required: ['defaultMaxResults', 'cacheTimeoutSeconds'],
       additionalProperties: false,
     },
+    document: {
+      type: 'object',
+      properties: {
+        conversionTimeout: { type: 'integer', minimum: 1000 },
+        maxTokens: { type: 'integer', minimum: 1 },
+        chunkSize: { type: 'integer', minimum: 1 },
+        chunkOverlap: { type: 'integer', minimum: 0 },
+      },
+      required: ['conversionTimeout', 'maxTokens', 'chunkSize', 'chunkOverlap'],
+      additionalProperties: false,
+    },
     logging: {
       type: 'object',
       properties: {
@@ -127,6 +144,7 @@ const configSchema: JSONSchemaType<Config> = {
     'mcp',
     'ingestion',
     'search',
+    'document',
     'logging',
     'schemaVersion',
   ],
@@ -266,6 +284,29 @@ function loadConfigFromEnv(): Partial<Config> {
     };
   }
 
+  // Document configuration
+  if (
+    env.DOCUMENT_CONVERSION_TIMEOUT ||
+    env.DOCUMENT_MAX_TOKENS ||
+    env.DOCUMENT_CHUNK_SIZE ||
+    env.DOCUMENT_CHUNK_OVERLAP
+  ) {
+    config.document = {
+      conversionTimeout: env.DOCUMENT_CONVERSION_TIMEOUT
+        ? parseInt(env.DOCUMENT_CONVERSION_TIMEOUT, 10)
+        : DEFAULT_CONFIG.document.conversionTimeout,
+      maxTokens: env.DOCUMENT_MAX_TOKENS
+        ? parseInt(env.DOCUMENT_MAX_TOKENS, 10)
+        : DEFAULT_CONFIG.document.maxTokens,
+      chunkSize: env.DOCUMENT_CHUNK_SIZE
+        ? parseInt(env.DOCUMENT_CHUNK_SIZE, 10)
+        : DEFAULT_CONFIG.document.chunkSize,
+      chunkOverlap: env.DOCUMENT_CHUNK_OVERLAP
+        ? parseInt(env.DOCUMENT_CHUNK_OVERLAP, 10)
+        : DEFAULT_CONFIG.document.chunkOverlap,
+    };
+  }
+
   // Logging configuration
   if (env.LOG_LEVEL) {
     config.logging = { level: env.LOG_LEVEL as LogLevel };
@@ -295,7 +336,7 @@ function expandConfigPaths(config: Config): Config {
  * 
  * Configuration is loaded in the following order (later sources override earlier ones):
  * 1. Default values
- * 2. Configuration file from default location (~/.codebase-memory/config.json) if it exists
+ * 2. Configuration file from default location (~/.knowledge-base/config.json) if it exists
  * 3. Configuration file (if explicitly provided via configPath parameter)
  * 4. Environment variables
  * 
@@ -308,7 +349,7 @@ export function loadConfig(configPath?: string): Config {
   let config: Config = { ...DEFAULT_CONFIG };
 
   // Try to load from default location first
-  const defaultConfigPath = join(homedir(), '.codebase-memory', 'config.json');
+  const defaultConfigPath = join(homedir(), '.knowledge-base', 'config.json');
   if (!configPath && existsSync(defaultConfigPath)) {
     try {
       const fileConfig = loadConfigFile(defaultConfigPath);

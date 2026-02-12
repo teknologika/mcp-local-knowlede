@@ -13,14 +13,12 @@
  * Requirements: 2.1, 2.3, 2.5, 2.6, 6.2, 6.3, 12.4, 14.1, 14.2, 14.3
  */
 
-import type { Config, IngestionParams, IngestionStats, LanguageStats, Chunk } from '../../shared/types/index.js';
+import type { Config, IngestionParams, IngestionStats, Chunk } from '../../shared/types/index.js';
 import { FileScannerService, type ScannedFile } from './file-scanner.service.js';
-import { TreeSitterParsingService } from '../parsing/tree-sitter-parsing.service.js';
 import type { EmbeddingService } from '../embedding/embedding.service.js';
 import { LanceDBClientWrapper } from '../../infrastructure/lancedb/lancedb.client.js';
 import { createLogger, startTimer, logMemoryUsage } from '../../shared/logging/index.js';
 import type { Logger } from '../../shared/logging/logger.js';
-import { classifyFile } from '../../shared/utils/file-classification.js';
 
 const rootLogger = createLogger('info');
 
@@ -45,7 +43,6 @@ export type ProgressCallback = (phase: string, current: number, total: number) =
  */
 export class IngestionService {
   private fileScanner: FileScannerService;
-  private parser: TreeSitterParsingService;
   private embeddingService: EmbeddingService;
   private lanceClient: LanceDBClientWrapper;
   private config: Config;
@@ -57,7 +54,6 @@ export class IngestionService {
     config: Config
   ) {
     this.fileScanner = new FileScannerService();
-    this.parser = new TreeSitterParsingService();
     this.embeddingService = embeddingService;
     this.lanceClient = lanceClient;
     this.config = config;
@@ -128,65 +124,18 @@ export class IngestionService {
         fileCount: supportedFiles.length,
       });
 
+      // TODO: Phase 2 will be replaced with document conversion and chunking
+      // For now, we skip parsing since tree-sitter has been removed
       const allChunks: Chunk[] = [];
-      const languageStats = new Map<string, { fileCount: number; chunkCount: number }>();
 
-      for (let i = 0; i < supportedFiles.length; i++) {
-        const file = supportedFiles[i];
-        progressCallback?.('Parsing files', i + 1, supportedFiles.length);
-
-        try {
-          if (!file.language) {
-            this.logger.warn('File has no language detected, skipping', {
-              filePath: file.path,
-            });
-            continue;
-          }
-
-          const chunks = await this.parser.parseFile(file.path, file.language as any);
-          
-          // Classify file and add metadata to chunks
-          const classification = classifyFile(file.relativePath);
-          const chunksWithMetadata = chunks.map(chunk => ({
-            ...chunk,
-            isTestFile: classification.isTest,
-            isLibraryFile: classification.isLibrary,
-          }));
-          
-          allChunks.push(...chunksWithMetadata);
-
-          // Update language statistics
-          const langKey = file.language;
-          if (!languageStats.has(langKey)) {
-            languageStats.set(langKey, { fileCount: 0, chunkCount: 0 });
-          }
-          const stats = languageStats.get(langKey)!;
-          stats.fileCount++;
-          stats.chunkCount += chunks.length;
-
-          this.logger.debug('File parsed successfully', {
-            filePath: file.relativePath,
-            language: file.language,
-            chunkCount: chunks.length,
-          });
-        } catch (error) {
-          // Log error but continue with other files
-          this.logger.error(
-            'Failed to parse file, skipping',
-            error instanceof Error ? error : new Error(String(error)),
-            {
-              filePath: file.relativePath,
-              language: file.language,
-            }
-          );
-        }
-      }
+      this.logger.warn('Parsing phase temporarily disabled - tree-sitter removed', {
+        supportedFiles: supportedFiles.length,
+      });
 
       parseTimer.end();
 
-      this.logger.info('Parsing completed', {
+      this.logger.info('Parsing phase skipped (tree-sitter removed)', {
         totalChunks: allChunks.length,
-        languages: Array.from(languageStats.keys()),
       });
 
       // Log memory after parsing
@@ -229,7 +178,6 @@ export class IngestionService {
         codebasePath,
         chunksWithEmbeddings,
         ingestionTimestamp,
-        languageStats,
         supportedFiles.length,
         progressCallback
       );
@@ -248,7 +196,6 @@ export class IngestionService {
         supportedFiles: scanStats.supportedFiles,
         unsupportedFiles: scanStats.unsupportedByExtension,
         chunksCreated: allChunks.length,
-        languages: this.convertLanguageStats(languageStats),
         durationMs,
       };
 
@@ -269,7 +216,7 @@ export class IngestionService {
         { codebaseName, codebasePath }
       );
       throw new IngestionError(
-        `Failed to ingest codebase '${codebaseName}': ${errorMessage}`,
+        `Failed to ingest knowledge base '${codebaseName}': ${errorMessage}`,
         error
       );
     }
@@ -382,7 +329,6 @@ export class IngestionService {
     codebasePath: string,
     chunks: Array<Chunk & { embedding: number[] }>,
     ingestionTimestamp: string,
-    _languageStats: Map<string, { fileCount: number; chunkCount: number }>,
     _fileCount: number,
     progressCallback?: ProgressCallback
   ): Promise<void> {
@@ -407,12 +353,10 @@ export class IngestionService {
         filePath: chunk.filePath || '',
         startLine: chunk.startLine || 0,
         endLine: chunk.endLine || 0,
-        language: chunk.language || 'unknown',
         chunkType: chunk.chunkType || 'unknown',
         isTestFile: chunk.isTestFile || false,
-        isLibraryFile: chunk.isLibraryFile || false,
         ingestionTimestamp,
-        _codebaseName: codebaseName,
+        _knowledgeBaseName: codebaseName,
         _path: codebasePath,
         _lastIngestion: ingestionTimestamp,
       }));
@@ -508,24 +452,5 @@ export class IngestionService {
         extension: file.extension,
       });
     }
-  }
-
-  /**
-   * Convert language statistics map to array format
-   */
-  private convertLanguageStats(
-    languageStats: Map<string, { fileCount: number; chunkCount: number }>
-  ): Map<string, LanguageStats> {
-    const result = new Map<string, LanguageStats>();
-    
-    for (const [language, stats] of languageStats.entries()) {
-      result.set(language, {
-        language,
-        fileCount: stats.fileCount,
-        chunkCount: stats.chunkCount,
-      });
-    }
-
-    return result;
   }
 }

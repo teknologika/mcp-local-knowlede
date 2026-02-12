@@ -1,10 +1,10 @@
 /**
  * Manager UI routes with server-side rendering
- * Provides web interface for codebase management
+ * Provides web interface for knowledge base management
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { CodebaseService } from '../../domains/codebase/codebase.service.js';
+import type { KnowledgeBaseService } from '../../domains/knowledgebase/codebase.service.js';
 import type { SearchService } from '../../domains/search/search.service.js';
 import type { IngestionService } from '../../domains/ingestion/ingestion.service.js';
 import type { Config } from '../../shared/types/index.js';
@@ -19,7 +19,7 @@ const logger = rootLogger.child('ManagerRoutes');
  */
 interface IngestionJob {
   id: string;
-  codebaseName: string;
+  knowledgeBaseName: string;
   phase: string;
   current: number;
   total: number;
@@ -34,7 +34,7 @@ const ingestionJobs = new Map<string, IngestionJob>();
  */
 export async function registerManagerRoutes(
   fastify: FastifyInstance,
-  codebaseService: CodebaseService,
+  codebaseService: KnowledgeBaseService,
   searchService: SearchService,
   ingestionService: IngestionService,
   config: Config
@@ -85,13 +85,13 @@ export async function registerManagerRoutes(
 
   /**
    * GET /
-   * Main page - list codebases
+   * Main page - list knowledge bases
    */
   fastify.get('/', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const codebases = await codebaseService.listCodebases();
+      const codebases = await codebaseService.listKnowledgeBases();
       
-      logger.debug('Codebases loaded', { count: codebases.length, codebases: codebases.map(c => ({ name: c.name, fileCount: c.fileCount, lastIngestion: c.lastIngestion })) });
+      logger.debug('Knowledge bases loaded', { count: codebases.length, codebases: codebases.map(c => ({ name: c.name, fileCount: c.fileCount, lastIngestion: c.lastIngestion })) });
       
       // Get flash messages using reply.flash()
       const flashMessages = (reply as any).flash();
@@ -103,11 +103,11 @@ export async function registerManagerRoutes(
         messageType: flashMessages?.messageType?.[0]
       });
     } catch (error) {
-      logger.error('Failed to load codebases', error instanceof Error ? error : new Error(String(error)));
+      logger.error('Failed to load knowledge bases', error instanceof Error ? error : new Error(String(error)));
       return reply.view('index.hbs', {
         title: 'Dashboard',
         codebases: [],
-        message: 'Failed to load codebases',
+        message: 'Failed to load knowledge bases',
         messageType: 'error'
       });
     }
@@ -115,7 +115,7 @@ export async function registerManagerRoutes(
 
   /**
    * GET /codebase/:name
-   * View codebase details
+   * View knowledge base details
    */
   fastify.get<{ Params: { name: string } }>(
     '/codebase/:name',
@@ -123,8 +123,8 @@ export async function registerManagerRoutes(
       const { name } = request.params;
       
       try {
-        const stats = await codebaseService.getCodebaseStats(name);
-        const codebases = await codebaseService.listCodebases();
+        const stats = await codebaseService.getKnowledgeBaseStats(name);
+        const codebases = await codebaseService.listKnowledgeBases();
         
         return reply.view('index.hbs', {
           title: name,
@@ -133,8 +133,8 @@ export async function registerManagerRoutes(
           stats
         });
       } catch (error) {
-        logger.error('Failed to load codebase', error instanceof Error ? error : new Error(String(error)), { name });
-        (request as any).flash('message', `Failed to load codebase: ${error instanceof Error ? error.message : String(error)}`);
+        logger.error('Failed to load knowledge base', error instanceof Error ? error : new Error(String(error)), { name });
+        (request as any).flash('message', `Failed to load knowledge base: ${error instanceof Error ? error.message : String(error)}`);
         (request as any).flash('messageType', 'error');
         return reply.redirect('/');
       }
@@ -143,18 +143,17 @@ export async function registerManagerRoutes(
 
   /**
    * POST /search
-   * Search codebases
+   * Search knowledge bases
    */
   fastify.post('/search', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { query, maxResults = 10, excludeTests, excludeLibraries } = request.body as { 
+    const { query, maxResults = 10, excludeTests } = request.body as { 
       query: string; 
       maxResults?: number;
       excludeTests?: string;
-      excludeLibraries?: string;
     };
     
     try {
-      logger.info('POST /search', { query, maxResults, excludeTests, excludeLibraries });
+      logger.info('POST /search', { query, maxResults, excludeTests });
       
       if (!query || query.trim() === '') {
         (request as any).flash('message', 'Search query is required');
@@ -166,10 +165,9 @@ export async function registerManagerRoutes(
         query,
         maxResults: Number(maxResults),
         excludeTests: excludeTests === 'true',
-        excludeLibraries: excludeLibraries === 'true',
       });
       
-      const codebases = await codebaseService.listCodebases();
+      const codebases = await codebaseService.listKnowledgeBases();
       
       return reply.view('index.hbs', {
         title: 'Search Results',
@@ -178,7 +176,6 @@ export async function registerManagerRoutes(
         searchQuery: query,
         maxResults: Number(maxResults),
         excludeTests: excludeTests === 'true',
-        excludeLibraries: excludeLibraries === 'true',
       });
     } catch (error) {
       logger.error('Search failed', error instanceof Error ? error : new Error(String(error)));
@@ -190,7 +187,7 @@ export async function registerManagerRoutes(
 
   /**
    * POST /ingest
-   * Start codebase ingestion (returns job ID immediately)
+   * Start knowledge base ingestion (returns job ID immediately)
    */
   fastify.post('/ingest', async (request: FastifyRequest, reply: FastifyReply) => {
     const { name, path, respectGitignore } = request.body as { name: string; path: string; respectGitignore?: string };
@@ -202,7 +199,7 @@ export async function registerManagerRoutes(
       if (!name || !path) {
         logger.warn('POST /ingest - missing name or path', { name, path });
         return reply.status(400).send({
-          error: 'Codebase name and path are required'
+          error: 'Knowledge base name and path are required'
         });
       }
       
@@ -220,7 +217,7 @@ export async function registerManagerRoutes(
       if (!normalizedName) {
         logger.warn('POST /ingest - normalized name is empty', { originalName: name });
         return reply.status(400).send({
-          error: 'Codebase name must contain at least one alphanumeric character'
+          error: 'Knowledge base name must contain at least one alphanumeric character'
         });
       }
       
@@ -249,7 +246,7 @@ export async function registerManagerRoutes(
       // Initialize job tracking
       ingestionJobs.set(jobId, {
         id: jobId,
-        codebaseName: normalizedName,
+        knowledgeBaseName: normalizedName,
         phase: 'Starting',
         current: 0,
         total: 1,
@@ -279,14 +276,14 @@ export async function registerManagerRoutes(
           job.phase = 'Complete';
           job.current = job.total;
         }
-        logger.info('Ingestion completed', { jobId, codebaseName: normalizedName });
+        logger.info('Ingestion completed', { jobId, knowledgeBaseName: normalizedName });
       }).catch((error) => {
         const job = ingestionJobs.get(jobId);
         if (job) {
           job.status = 'failed';
           job.error = error instanceof Error ? error.message : String(error);
         }
-        logger.error('Ingestion failed', error instanceof Error ? error : new Error(String(error)), { jobId, codebaseName: normalizedName });
+        logger.error('Ingestion failed', error instanceof Error ? error : new Error(String(error)), { jobId, knowledgeBaseName: normalizedName });
       });
       
       // Return job ID immediately
@@ -364,7 +361,7 @@ export async function registerManagerRoutes(
 
   /**
    * POST /rename
-   * Rename codebase
+   * Rename knowledge base
    */
   fastify.post('/rename', async (request: FastifyRequest, reply: FastifyReply) => {
     const { oldName, newName } = request.body as { oldName: string; newName: string };
@@ -393,7 +390,7 @@ export async function registerManagerRoutes(
         return reply.redirect('/');
       }
       
-      await codebaseService.renameCodebase(oldName, normalizedNewName);
+      await codebaseService.renameKnowledgeBase(oldName, normalizedNewName);
       
       (request as any).flash('message', `Renamed ${oldName} to ${normalizedNewName}`);
       (request as any).flash('messageType', 'success');
@@ -408,7 +405,7 @@ export async function registerManagerRoutes(
 
   /**
    * POST /delete
-   * Delete codebase
+   * Delete knowledge base
    */
   fastify.post('/delete', async (request: FastifyRequest, reply: FastifyReply) => {
     const { name } = request.body as { name: string };
@@ -417,12 +414,12 @@ export async function registerManagerRoutes(
       logger.info('POST /delete', { name });
       
       if (!name) {
-        (request as any).flash('message', 'Codebase name is required');
+        (request as any).flash('message', 'Knowledge base name is required');
         (request as any).flash('messageType', 'error');
         return reply.redirect('/');
       }
       
-      await codebaseService.deleteCodebase(name);
+      await codebaseService.deleteKnowledgeBase(name);
       
       (request as any).flash('message', `Deleted ${name}`);
       (request as any).flash('messageType', 'success');

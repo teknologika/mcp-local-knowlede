@@ -8,7 +8,7 @@ node_modules/
 dist/
 
 # Local data directories
-.codebase-memory/
+.knowledge-base/
 *.db
 *.sqlite
 

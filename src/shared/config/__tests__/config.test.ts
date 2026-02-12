@@ -51,6 +51,10 @@ describe('Configuration Management', () => {
       expect(config.server.port).toBe(8008);
       expect(config.ingestion.batchSize).toBe(100);
       expect(config.search.defaultMaxResults).toBe(50);
+      expect(config.document.conversionTimeout).toBe(30000);
+      expect(config.document.maxTokens).toBe(512);
+      expect(config.document.chunkSize).toBe(1000);
+      expect(config.document.chunkOverlap).toBe(200);
       expect(config.logging.level).toBe('info');
       expect(config.schemaVersion).toBe(SCHEMA_VERSION);
     });
@@ -106,6 +110,10 @@ describe('Configuration Management', () => {
       process.env.INGESTION_MAX_FILE_SIZE = '2097152';
       process.env.SEARCH_DEFAULT_MAX_RESULTS = '100';
       process.env.SEARCH_CACHE_TIMEOUT_SECONDS = '120';
+      process.env.DOCUMENT_CONVERSION_TIMEOUT = '60000';
+      process.env.DOCUMENT_MAX_TOKENS = '1024';
+      process.env.DOCUMENT_CHUNK_SIZE = '2000';
+      process.env.DOCUMENT_CHUNK_OVERLAP = '400';
       process.env.LOG_LEVEL = 'warn';
 
       const config = loadConfig();
@@ -119,6 +127,10 @@ describe('Configuration Management', () => {
       expect(config.ingestion.maxFileSize).toBe(2097152);
       expect(config.search.defaultMaxResults).toBe(100);
       expect(config.search.cacheTimeoutSeconds).toBe(120);
+      expect(config.document.conversionTimeout).toBe(60000);
+      expect(config.document.maxTokens).toBe(1024);
+      expect(config.document.chunkSize).toBe(2000);
+      expect(config.document.chunkOverlap).toBe(400);
       expect(config.logging.level).toBe('warn');
     });
 
@@ -218,6 +230,7 @@ describe('Configuration Management', () => {
       expect(config.mcp).toEqual(DEFAULT_CONFIG.mcp);
       expect(config.ingestion).toEqual(DEFAULT_CONFIG.ingestion);
       expect(config.search).toEqual(DEFAULT_CONFIG.search);
+      expect(config.document).toEqual(DEFAULT_CONFIG.document);
       expect(config.logging).toEqual(DEFAULT_CONFIG.logging);
       expect(config.schemaVersion).toBe(DEFAULT_CONFIG.schemaVersion);
     });
@@ -332,6 +345,10 @@ describe('Configuration Management', () => {
       expect(DEFAULT_CONFIG.ingestion.maxFileSize).toBe(1048576);
       expect(DEFAULT_CONFIG.search.defaultMaxResults).toBe(50);
       expect(DEFAULT_CONFIG.search.cacheTimeoutSeconds).toBe(60);
+      expect(DEFAULT_CONFIG.document.conversionTimeout).toBe(30000);
+      expect(DEFAULT_CONFIG.document.maxTokens).toBe(512);
+      expect(DEFAULT_CONFIG.document.chunkSize).toBe(1000);
+      expect(DEFAULT_CONFIG.document.chunkOverlap).toBe(200);
       expect(DEFAULT_CONFIG.logging.level).toBe('info');
       expect(DEFAULT_CONFIG.mcp.transport).toBe('stdio');
       expect(DEFAULT_CONFIG.embedding.modelName).toBe('Xenova/all-MiniLM-L6-v2');
@@ -339,8 +356,8 @@ describe('Configuration Management', () => {
     });
 
     it('should have valid paths', () => {
-      expect(DEFAULT_CONFIG.lancedb.persistPath).toContain('.codebase-memory');
-      expect(DEFAULT_CONFIG.embedding.cachePath).toContain('.codebase-memory');
+      expect(DEFAULT_CONFIG.lancedb.persistPath).toContain('.knowledge-base');
+      expect(DEFAULT_CONFIG.embedding.cachePath).toContain('.knowledge-base');
     });
   });
 
@@ -408,6 +425,82 @@ describe('Configuration Management', () => {
       const loadedConfig = loadConfig(testConfigPath);
 
       expect(loadedConfig.search.cacheTimeoutSeconds).toBe(0);
+    });
+
+    it('should validate document configuration from environment variables', () => {
+      process.env.DOCUMENT_CONVERSION_TIMEOUT = '45000';
+      process.env.DOCUMENT_MAX_TOKENS = '256';
+      process.env.DOCUMENT_CHUNK_SIZE = '500';
+      process.env.DOCUMENT_CHUNK_OVERLAP = '100';
+
+      const config = loadConfig();
+
+      expect(config.document.conversionTimeout).toBe(45000);
+      expect(config.document.maxTokens).toBe(256);
+      expect(config.document.chunkSize).toBe(500);
+      expect(config.document.chunkOverlap).toBe(100);
+    });
+
+    it('should throw ConfigValidationError for invalid document conversionTimeout', () => {
+      const invalidConfig = {
+        ...DEFAULT_CONFIG,
+        document: {
+          ...DEFAULT_CONFIG.document,
+          conversionTimeout: 500, // Less than minimum 1000ms
+        },
+      };
+
+      writeFileSync(testConfigPath, JSON.stringify(invalidConfig, null, 2));
+
+      expect(() => loadConfig(testConfigPath)).toThrow(ConfigValidationError);
+    });
+
+    it('should throw ConfigValidationError for invalid document maxTokens', () => {
+      const invalidConfig = {
+        ...DEFAULT_CONFIG,
+        document: {
+          ...DEFAULT_CONFIG.document,
+          maxTokens: 0,
+        },
+      };
+
+      writeFileSync(testConfigPath, JSON.stringify(invalidConfig, null, 2));
+
+      expect(() => loadConfig(testConfigPath)).toThrow(ConfigValidationError);
+    });
+
+    it('should throw ConfigValidationError for negative chunkOverlap', () => {
+      const invalidConfig = {
+        ...DEFAULT_CONFIG,
+        document: {
+          ...DEFAULT_CONFIG.document,
+          chunkOverlap: -1,
+        },
+      };
+
+      writeFileSync(testConfigPath, JSON.stringify(invalidConfig, null, 2));
+
+      expect(() => loadConfig(testConfigPath)).toThrow(ConfigValidationError);
+    });
+
+    it('should accept valid document configuration from file', () => {
+      const validConfig = {
+        ...DEFAULT_CONFIG,
+        document: {
+          conversionTimeout: 60000,
+          maxTokens: 1024,
+          chunkSize: 2000,
+          chunkOverlap: 400,
+        },
+      };
+
+      writeFileSync(testConfigPath, JSON.stringify(validConfig, null, 2));
+      const config = loadConfig(testConfigPath);
+
+      expect(config.document.conversionTimeout).toBe(60000);
+      expect(config.document.maxTokens).toBe(1024);
+      expect(config.document.chunkSize).toBe(2000);
+      expect(config.document.chunkOverlap).toBe(400);
     });
   });
 });

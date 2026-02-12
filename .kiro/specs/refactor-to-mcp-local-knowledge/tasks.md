@@ -1,0 +1,384 @@
+# Tasks: Refactor to mcp-local-knowledge
+
+## Phase 1: Project Rename & Cleanup
+
+### 1.1 Update Package Configuration
+- [x] 1.1.1 Update package.json name to @teknologika/mcp-local-knowledge
+- [x] 1.1.2 Update package.json description for document focus
+- [x] 1.1.3 Update bin commands (mcp-local-knowledge, mcp-knowledge-ingest, mcp-knowledge-manager)
+- [x] 1.1.4 Update package.json keywords (remove code-specific, add document-specific)
+- [x] 1.1.5 Update repository URLs in package.json
+- [x] 1.1.6 Update .gitignore to use .knowledge-base/ instead of .codebase-memory/
+
+### 1.2 Remove Code-Specific Domains
+- [x] 1.2.1 Delete src/domains/parsing/ directory
+- [x] 1.2.2 Remove tree-sitter dependencies from package.json
+- [x] 1.2.3 Remove language detection utilities
+- [x] 1.2.4 Remove code file classification logic
+
+### 1.3 Rename Core Domain
+- [x] 1.3.1 Rename src/domains/codebase/ to src/domains/knowledgebase/
+- [x] 1.3.2 Update all imports throughout the project
+- [x] 1.3.3 Rename types: Codebase → KnowledgeBase, CodebaseMetadata → KnowledgeBaseMetadata, CodebaseStats → KnowledgeBaseStats
+- [x] 1.3.4 Update service methods and variable names
+- [x] 1.3.5 Update test files
+
+### 1.4 Update Configuration System
+- [x] 1.4.1 Update src/shared/config/config.ts default paths from .codebase-memory to .knowledge-base
+- [x] 1.4.2 Update configuration schema
+- [x] 1.4.3 Update validation messages
+- [x] 1.4.4 Update .env.example with new paths
+
+### 1.5 Update Shared Types
+- [x] 1.5.1 Remove Language type from src/shared/types/index.ts
+- [~] 1.5.2 Remove code-specific ChunkType values
+- [~] 1.5.3 Add DocumentType type (pdf, docx, pptx, xlsx, html, markdown, text, audio)
+- [~] 1.5.4 Add document-specific ChunkType values (paragraph, section, table, heading)
+- [~] 1.5.5 Update SearchResult interface
+- [~] 1.5.6 Update ChunkMetadata interface
+
+## Phase 2: Python Bridge Infrastructure
+
+### 2.1 Create Python Package Structure
+- [ ] 2.1.1 Create python-package/ directory
+- [ ] 2.1.2 Create pyproject.toml with project metadata and dependencies
+- [ ] 2.1.3 Create python-package/mcp_knowledge_docling/__init__.py
+- [ ] 2.1.4 Add README.md and LICENSE to python-package/
+
+### 2.2 Implement Python Document Converter
+- [ ] 2.2.1 Create python-package/mcp_knowledge_docling/converter.py
+- [ ] 2.2.2 Implement convert_document function with DocumentConverter
+- [ ] 2.2.3 Add metadata extraction (title, page count, word count, images, tables)
+- [ ] 2.2.4 Add error handling for conversion failures
+- [ ] 2.2.5 Support all document formats (PDF, DOCX, PPTX, XLSX, HTML, MD, TXT)
+- [ ] 2.2.6 Add audio transcription support with Whisper ASR
+
+### 2.3 Implement Python Document Chunker
+- [ ] 2.3.1 Create python-package/mcp_knowledge_docling/chunker.py
+- [ ] 2.3.2 Implement HybridChunker initialization with tokenizer
+- [ ] 2.3.3 Implement chunk_document function
+- [ ] 2.3.4 Add contextualization for chunks (heading hierarchy)
+- [ ] 2.3.5 NO fallback - return error if HybridChunker fails
+
+### 2.4 Implement Python CLI Entry Point
+- [ ] 2.4.1 Create python-package/mcp_knowledge_docling/cli.py
+- [ ] 2.4.2 Implement stdin/stdout JSON communication
+- [ ] 2.4.3 Route to converter or chunker based on action
+- [ ] 2.4.4 Add error handling and exit codes
+
+### 2.5 Create TypeScript Python Bridge
+- [ ] 2.5.1 Create src/infrastructure/python/ directory
+- [ ] 2.5.2 Implement python-bridge.ts with PythonBridge class
+- [ ] 2.5.3 Add uvx process spawning
+- [ ] 2.5.4 Implement stdin/stdout JSON communication
+- [ ] 2.5.5 Add process lifecycle management
+- [ ] 2.5.6 Add timeout handling (30s default)
+- [ ] 2.5.7 Add retry logic for transient failures
+- [ ] 2.5.8 Add uv availability check with helpful error messages
+
+### 2.6 Create Installation Scripts
+- [ ] 2.6.1 Create scripts/install-uv.js for auto-installing uv
+- [ ] 2.6.2 Add platform detection (Windows/macOS/Linux)
+- [ ] 2.6.3 Add installation commands for each platform
+- [ ] 2.6.4 Add fallback instructions if auto-install fails
+- [ ] 2.6.5 Create scripts/check-deps.js for manual verification
+- [ ] 2.6.6 Update package.json with postinstall script
+
+### 2.7 Add Python Bridge Tests
+- [ ] 2.7.1 Test uvx process spawning
+- [ ] 2.7.2 Test JSON communication protocol
+- [ ] 2.7.3 Test error handling
+- [ ] 2.7.4 Test timeout scenarios
+- [ ] 2.7.5 Test process cleanup
+
+## Phase 3: Document Processing Services
+
+### 3.1 Create Document Domain Structure
+- [ ] 3.1.1 Create src/domains/document/ directory
+- [ ] 3.1.2 Create document.types.ts with DocumentConversionResult interface
+- [ ] 3.1.3 Add DocumentMetadata interface
+- [ ] 3.1.4 Add DocumentChunk interface
+- [ ] 3.1.5 Create index.ts barrel file
+
+### 3.2 Implement Document Converter Service
+- [ ] 3.2.1 Create document-converter.service.ts
+- [ ] 3.2.2 Implement document type detection by extension
+- [ ] 3.2.3 Route to Python bridge for Docling conversion
+- [ ] 3.2.4 Support all document formats (PDF, DOCX, PPTX, XLSX, HTML, MD, TXT)
+- [ ] 3.2.5 Add audio file support (MP3, WAV, M4A, FLAC)
+- [ ] 3.2.6 Extract and normalize metadata
+- [ ] 3.2.7 Add progress reporting for long conversions
+- [ ] 3.2.8 Handle conversion errors
+
+### 3.3 Implement Document Chunker Service
+- [ ] 3.3.1 Create document-chunker.service.ts
+- [ ] 3.3.2 Use Docling HybridChunker exclusively via Python bridge
+- [ ] 3.3.3 Configure max_tokens: 512, merge_peers: true
+- [ ] 3.3.4 Use sentence-transformers/all-MiniLM-L6-v2 tokenizer
+- [ ] 3.3.5 NO fallback - fail if HybridChunker fails
+- [ ] 3.3.6 Add contextualization (heading hierarchy)
+
+### 3.4 Add Document Service Tests
+- [ ] 3.4.1 Test document type detection
+- [ ] 3.4.2 Test PDF conversion
+- [ ] 3.4.3 Test DOCX conversion
+- [ ] 3.4.4 Test PPTX conversion
+- [ ] 3.4.5 Test XLSX conversion
+- [ ] 3.4.6 Test HTML conversion
+- [ ] 3.4.7 Test Markdown conversion
+- [ ] 3.4.8 Test text file conversion
+- [ ] 3.4.9 Test audio transcription
+- [ ] 3.4.10 Test HybridChunker integration
+- [ ] 3.4.11 Test error handling (no fallback)
+- [ ] 3.4.12 Test metadata extraction
+
+## Phase 4: Update Ingestion Pipeline
+
+### 4.1 Update File Scanner
+- [ ] 4.1.1 Update src/domains/ingestion/file-scanner.service.ts with document patterns
+- [ ] 4.1.2 Remove code file patterns
+- [ ] 4.1.3 Add DOCUMENT_EXTENSIONS constant
+- [ ] 4.1.4 Update file classification for documents
+- [ ] 4.1.5 Add document type detection
+
+### 4.2 Update Ingestion Service
+- [ ] 4.2.1 Remove tree-sitter parsing logic from ingestion.service.ts
+- [ ] 4.2.2 Add document converter integration
+- [ ] 4.2.3 Add document chunker integration (HybridChunker only)
+- [ ] 4.2.4 Update progress reporting for documents
+- [ ] 4.2.5 Add document type to metadata
+- [ ] 4.2.6 Fail document ingestion if HybridChunker fails (no fallback)
+- [ ] 4.2.7 Update batch processing for documents
+- [ ] 4.2.8 Add conversion timeout handling
+- [ ] 4.2.9 Add retry logic for conversions (not chunking)
+
+### 4.3 Update File Classification
+- [ ] 4.3.1 Update src/shared/utils/file-classification.ts for documents
+- [ ] 4.3.2 Remove code-specific classification
+- [ ] 4.3.3 Add document type classification
+- [ ] 4.3.4 Keep test file detection for markdown
+- [ ] 4.3.5 Remove library file detection
+
+### 4.4 Update Ingestion Tests
+- [ ] 4.4.1 Test document file scanning
+- [ ] 4.4.2 Test document conversion integration
+- [ ] 4.4.3 Test chunking integration
+- [ ] 4.4.4 Test error handling
+- [ ] 4.4.5 Test progress reporting
+- [ ] 4.4.6 Test batch processing
+
+## Phase 5: Update MCP Server
+
+### 5.1 Update Tool Schemas
+- [ ] 5.1.1 Rename list_codebases → list_knowledgebases in tool-schemas.ts
+- [ ] 5.1.2 Rename search_codebases → search_knowledgebases
+- [ ] 5.1.3 Rename get_codebase_stats → get_knowledgebase_stats
+- [ ] 5.1.4 Rename open_codebase_manager → open_knowledgebase_manager
+- [ ] 5.1.5 Replace codebaseName with knowledgebaseName in input schemas
+- [ ] 5.1.6 Replace language filter with documentType filter
+- [ ] 5.1.7 Update descriptions and examples
+- [ ] 5.1.8 Replace language field with documentType in output schemas
+- [ ] 5.1.9 Update chunkType values for documents
+- [ ] 5.1.10 Add document-specific metadata fields
+
+### 5.2 Update MCP Server Implementation
+- [ ] 5.2.1 Update tool handlers in mcp-server.ts
+- [ ] 5.2.2 Update error messages
+- [ ] 5.2.3 Update logging
+- [ ] 5.2.4 Update tool descriptions for AI assistants
+
+### 5.3 Update MCP Tests
+- [ ] 5.3.1 Update tool schema tests
+- [ ] 5.3.2 Update integration tests
+- [ ] 5.3.3 Test renamed tools
+- [ ] 5.3.4 Test new schemas
+
+## Phase 6: Update Search Service
+
+### 6.1 Update Search Service
+- [ ] 6.1.1 Replace language filter with documentType filter in search.service.ts
+- [ ] 6.1.2 Update result formatting
+- [ ] 6.1.3 Update metadata handling
+- [ ] 6.1.4 Keep semantic search logic unchanged
+- [ ] 6.1.5 Keep filtering logic for test files
+
+### 6.2 Update Search Tests
+- [ ] 6.2.1 Test document type filtering
+- [ ] 6.2.2 Test search with new metadata
+- [ ] 6.2.3 Test result formatting
+
+## Phase 7: Update CLI Tools
+
+### 7.1 Update Ingest CLI
+- [ ] 7.1.1 Update command name in src/bin/ingest.ts
+- [ ] 7.1.2 Update help text
+- [ ] 7.1.3 Update descriptions and examples
+- [ ] 7.1.4 Update progress messages
+- [ ] 7.1.5 Update error messages
+- [ ] 7.1.6 Add document format information to output
+
+### 7.2 Update Manager CLI
+- [ ] 7.2.1 Update command name in src/bin/manager.ts
+- [ ] 7.2.2 Update help text
+- [ ] 7.2.3 Update descriptions
+
+### 7.3 Update MCP Server CLI
+- [ ] 7.3.1 Update command name in src/bin/mcp-server.ts
+- [ ] 7.3.2 Update help text
+- [ ] 7.3.3 Update descriptions
+
+## Phase 8: Enhance Manager UI
+
+### 8.1 Update UI Templates
+- [ ] 8.1.1 Update title and branding in layout.hbs
+- [ ] 8.1.2 Replace "Codebase" with "Knowledge Base" in layout.hbs
+- [ ] 8.1.3 Update tab labels in index.hbs
+- [ ] 8.1.4 Update search interface in index.hbs
+- [ ] 8.1.5 Update manage interface in index.hbs
+- [ ] 8.1.6 Add file upload section in index.hbs
+
+### 8.2 Add File Upload UI
+- [ ] 8.2.1 Create drag-and-drop zone for files
+- [ ] 8.2.2 Add file input for single file selection
+- [ ] 8.2.3 Add folder input for folder selection
+- [ ] 8.2.4 Add file list with remove buttons
+- [ ] 8.2.5 Add upload progress indicators
+- [ ] 8.2.6 Add success/error messages
+- [ ] 8.2.7 Add file type validation (client-side)
+- [ ] 8.2.8 Add file size warnings
+- [ ] 8.2.9 Add upload queue management
+
+### 8.3 Update Manager Routes
+- [ ] 8.3.1 Add /api/upload/file endpoint in manager-routes.ts
+- [ ] 8.3.2 Add /api/upload/folder endpoint
+- [ ] 8.3.3 Add /api/upload/progress/:uploadId endpoint (SSE)
+- [ ] 8.3.4 Handle file uploads with multipart/form-data
+- [ ] 8.3.5 Process uploaded files
+- [ ] 8.3.6 Return progress updates
+- [ ] 8.3.7 Add file validation (server-side)
+- [ ] 8.3.8 Add temporary file cleanup
+- [ ] 8.3.9 Add upload session management
+
+### 8.4 Update Manager JavaScript
+- [ ] 8.4.1 Add drag-and-drop handlers in manager.js
+- [ ] 8.4.2 Add file input handlers
+- [ ] 8.4.3 Add folder input handlers
+- [ ] 8.4.4 Add upload queue management
+- [ ] 8.4.5 Add progress tracking
+- [ ] 8.4.6 Add SSE connection for progress
+- [ ] 8.4.7 Update search to use new API
+- [ ] 8.4.8 Update manage to use new API
+
+### 8.5 Update Manager CSS
+- [ ] 8.5.1 Style drag-and-drop zone in manager.css
+- [ ] 8.5.2 Style file upload UI
+- [ ] 8.5.3 Style progress indicators
+- [ ] 8.5.4 Update branding colors if needed
+
+### 8.6 Update Manager Tests
+- [ ] 8.6.1 Test file upload endpoint
+- [ ] 8.6.2 Test folder upload endpoint
+- [ ] 8.6.3 Test progress tracking
+- [ ] 8.6.4 Test file validation
+- [ ] 8.6.5 Test error handling
+
+## Phase 9: Update Documentation
+
+### 9.1 Update README.md
+- [ ] 9.1.1 Update title and description
+- [ ] 9.1.2 Update feature list (remove code, add documents)
+- [ ] 9.1.3 Update installation instructions
+- [ ] 9.1.4 Update quick start guide
+- [ ] 9.1.5 Update usage examples
+- [ ] 9.1.6 Update MCP client configuration
+- [ ] 9.1.7 Remove "Supported Languages" section
+- [ ] 9.1.8 Add "Supported Document Formats" section
+- [ ] 9.1.9 Update architecture diagrams
+- [ ] 9.1.10 Update troubleshooting section
+- [ ] 9.1.11 Update all command examples
+
+### 9.2 Update Configuration Documentation
+- [ ] 9.2.1 Document new default paths
+- [ ] 9.2.2 Document Python requirements
+- [ ] 9.2.3 Document Docling configuration
+- [ ] 9.2.4 Add migration guide for existing users
+
+### 9.3 Create Migration Guide
+- [ ] 9.3.1 Create MIGRATION.md
+- [ ] 9.3.2 Explain breaking changes
+- [ ] 9.3.3 Provide migration steps
+- [ ] 9.3.4 Document data migration
+- [ ] 9.3.5 Provide rollback instructions
+
+### 9.4 Update Product Documentation
+- [ ] 9.4.1 Rename product/Codebase-Memory-MCP-PRD.md to Knowledge-Base-MCP-PRD.md
+- [ ] 9.4.2 Update content in PRD
+- [ ] 9.4.3 Update steering files in .kiro/steering/
+- [ ] 9.4.4 Update any other documentation files
+
+## Phase 10: Testing & Quality Assurance
+
+### 10.1 Unit Tests
+- [ ] 10.1.1 Run all unit tests: npm test
+- [ ] 10.1.2 Achieve 80%+ coverage
+- [ ] 10.1.3 Fix any failing tests
+- [ ] 10.1.4 Add missing tests
+
+### 10.2 Integration Tests
+- [ ] 10.2.1 Test end-to-end document ingestion
+- [ ] 10.2.2 Test search across different document types
+- [ ] 10.2.3 Test MCP tool integration
+- [ ] 10.2.4 Test Manager UI workflows
+- [ ] 10.2.5 Test Python bridge reliability
+
+### 10.3 Manual Testing
+- [ ] 10.3.1 Test PDF file ingestion
+- [ ] 10.3.2 Test DOCX file ingestion
+- [ ] 10.3.3 Test PPTX file ingestion
+- [ ] 10.3.4 Test XLSX file ingestion
+- [ ] 10.3.5 Test HTML file ingestion
+- [ ] 10.3.6 Test Markdown file ingestion
+- [ ] 10.3.7 Test text file ingestion
+- [ ] 10.3.8 Test audio file ingestion (MP3, WAV)
+- [ ] 10.3.9 Test search functionality
+- [ ] 10.3.10 Test Manager UI search tab
+- [ ] 10.3.11 Test Manager UI manage tab
+- [ ] 10.3.12 Test Manager UI ingest tab with drag-and-drop
+- [ ] 10.3.13 Test file upload
+- [ ] 10.3.14 Test folder upload
+- [ ] 10.3.15 Test MCP tools in Claude Desktop
+- [ ] 10.3.16 Test error scenarios
+- [ ] 10.3.17 Test performance with large documents
+
+### 10.4 Performance Testing
+- [ ] 10.4.1 Benchmark document conversion speed
+- [ ] 10.4.2 Benchmark search performance
+- [ ] 10.4.3 Test with large knowledge bases (1000+ documents)
+- [ ] 10.4.4 Test memory usage
+- [ ] 10.4.5 Optimize bottlenecks
+
+## Phase 11: Deployment Preparation
+
+### 11.1 Version Update
+- [ ] 11.1.1 Update version in package.json to 1.0.0
+- [ ] 11.1.2 Update CHANGELOG.md with breaking changes
+- [ ] 11.1.3 Tag release in git
+
+### 11.2 Build & Package
+- [ ] 11.2.1 Run npm run clean
+- [ ] 11.2.2 Run npm run build
+- [ ] 11.2.3 Test built package locally
+- [ ] 11.2.4 Run npm pack and test installation
+
+### 11.3 Python Package Publishing
+- [ ] 11.3.1 Build Python package: python -m build
+- [ ] 11.3.2 Test Python package locally
+- [ ] 11.3.3 Publish to PyPI: twine upload dist/*
+
+### 11.4 Pre-publish Checklist
+- [ ] 11.4.1 Verify all tests passing
+- [ ] 11.4.2 Verify documentation complete
+- [ ] 11.4.3 Verify migration guide ready
+- [ ] 11.4.4 Verify Python dependencies documented
+- [ ] 11.4.5 Verify examples tested
+- [ ] 11.4.6 Run security audit: npm audit

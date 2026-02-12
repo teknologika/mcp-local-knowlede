@@ -2,7 +2,7 @@
 /**
  * Manager UI Entry Point
  * 
- * Starts the Fastify server with the web-based Manager UI for codebase management.
+ * Starts the Fastify server with the web-based Manager UI for knowledge base management.
  * 
  * Usage:
  *   manager [--config <path>]
@@ -19,7 +19,7 @@ import { loadConfig } from '../shared/config/index.js';
 import { createLogger } from '../shared/logging/index.js';
 import { LanceDBClientWrapper } from '../infrastructure/lancedb/lancedb.client.js';
 import { HuggingFaceEmbeddingService } from '../domains/embedding/index.js';
-import { CodebaseService } from '../domains/codebase/codebase.service.js';
+import { KnowledgeBaseService } from '../domains/knowledgebase/codebase.service.js';
 import { SearchService } from '../domains/search/search.service.js';
 import { IngestionService } from '../domains/ingestion/ingestion.service.js';
 import { FastifyServer } from '../infrastructure/fastify/fastify-server.js';
@@ -104,9 +104,9 @@ async function main() {
     const embeddingService = new HuggingFaceEmbeddingService(config, logger);
     await embeddingService.initialize();
 
-    // Initialize codebase service
-    mainLogger.debug('Initializing codebase service');
-    const codebaseService = new CodebaseService(lanceClient, config);
+    // Initialize knowledge base service
+    mainLogger.debug('Initializing knowledge base service');
+    const codebaseService = new KnowledgeBaseService(lanceClient, config);
 
     // Initialize search service
     mainLogger.debug('Initializing search service');

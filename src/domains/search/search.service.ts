@@ -60,7 +60,7 @@ export class SearchService {
   private getCacheKey(params: SearchParams): string {
     return JSON.stringify({
       query: params.query,
-      codebaseName: params.codebaseName || null,
+      codebaseName: params.knowledgeBaseName || null,
       language: params.language || null,
       maxResults: params.maxResults || this.config.search.defaultMaxResults,
     });
@@ -104,19 +104,19 @@ export class SearchService {
   }
 
   /**
-   * Search codebases with semantic similarity
+   * Search knowledge bases with semantic similarity
    */
   async search(params: SearchParams): Promise<SearchResults> {
     const timer = startTimer('search', logger, {
       query: params.query.substring(0, 100),
-      codebaseName: params.codebaseName,
+      codebaseName: params.knowledgeBaseName,
       language: params.language,
     });
 
     try {
       logger.info('Executing search', {
         query: params.query.substring(0, 100),
-        codebaseName: params.codebaseName,
+        codebaseName: params.knowledgeBaseName,
         language: params.language,
         maxResults: params.maxResults,
       });
@@ -144,11 +144,11 @@ export class SearchService {
       embeddingTimer.end();
 
       // Determine which tables to search
-      const tables = await this.getTablesToSearch(params.codebaseName);
+      const tables = await this.getTablesToSearch(params.knowledgeBaseName);
 
       if (tables.length === 0) {
         logger.warn('No tables found to search', {
-          codebaseName: params.codebaseName,
+          codebaseName: params.knowledgeBaseName,
         });
         const queryTime = timer.end();
         const emptyResults: SearchResults = {
@@ -183,10 +183,6 @@ export class SearchService {
             filters.push(`isTestFile = false`);
           }
           
-          if (params.excludeLibraries) {
-            filters.push(`isLibraryFile = false`);
-          }
-          
           // Apply combined filter
           if (filters.length > 0) {
             query = query.where(filters.join(' AND '));
@@ -219,7 +215,7 @@ export class SearchService {
               chunkType: row.chunkType || '',
               content: row.content || '',
               similarityScore,
-              codebaseName: row._codebaseName || tableName,
+              knowledgeBaseName: row._knowledgeBaseName || tableName,
             };
 
             allResults.push(result);
@@ -273,26 +269,26 @@ export class SearchService {
   }
 
   /**
-   * Get list of tables to search based on codebase filter
+   * Get list of tables to search based on knowledge base filter
    */
   private async getTablesToSearch(codebaseName?: string): Promise<string[]> {
     if (codebaseName) {
-      // Search specific codebase
+      // Search specific knowledge base
       const tableName = LanceDBClientWrapper.getTableName(codebaseName);
       const exists = await this.lanceClient.tableExists(codebaseName);
       
       if (!exists) {
-        logger.warn('Codebase table not found', { codebaseName, tableName });
+        logger.warn('Knowledge base table not found', { codebaseName, tableName });
         return [];
       }
 
       return [tableName];
     }
 
-    // Search all codebases
+    // Search all knowledge bases
     const tables = await this.lanceClient.listTables();
     return tables
-      .filter(t => t.metadata?.codebaseName)
+      .filter(t => t.metadata?.knowledgeBaseName)
       .map(t => t.name);
   }
 

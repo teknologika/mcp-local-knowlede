@@ -43,7 +43,7 @@ describe('MCP Tool Schemas', () => {
       expect(validate({ extra: 'property' })).toBe(false);
     });
 
-    it('should have valid output schema with codebases array', () => {
+    it('should have valid output schema with knowledgebases array', () => {
       expect(LIST_CODEBASES_SCHEMA.outputSchema.type).toBe('object');
       expect(LIST_CODEBASES_SCHEMA.outputSchema.properties.codebases).toBeDefined();
       expect(LIST_CODEBASES_SCHEMA.outputSchema.properties.codebases.type).toBe('array');
@@ -117,7 +117,7 @@ describe('MCP Tool Schemas', () => {
       const validate = ajv.compile(SEARCH_CODEBASES_SCHEMA.inputSchema);
       const input = {
         query: 'database connection',
-        codebaseName: 'my-project',
+        knowledgeBaseName: 'my-project',
         language: 'typescript',
         maxResults: 25,
       };
@@ -168,7 +168,7 @@ describe('MCP Tool Schemas', () => {
             chunkType: 'function',
             content: 'function authenticate() { ... }',
             similarityScore: 0.95,
-            codebaseName: 'my-project',
+            knowledgeBaseName: 'my-project',
           },
         ],
         totalResults: 1,
@@ -189,7 +189,7 @@ describe('MCP Tool Schemas', () => {
             chunkType: 'function',
             content: 'function authenticate() { ... }',
             similarityScore: 1.5, // Above maximum
-            codebaseName: 'my-project',
+            knowledgeBaseName: 'my-project',
           },
         ],
         totalResults: 1,
@@ -210,7 +210,7 @@ describe('MCP Tool Schemas', () => {
             chunkType: 'function',
             content: 'function authenticate() { ... }',
             similarityScore: 0.95,
-            codebaseName: 'my-project',
+            knowledgeBaseName: 'my-project',
           },
         ],
         totalResults: 1,
@@ -343,7 +343,7 @@ describe('MCP Tool Schemas', () => {
       const validate = ajv.compile(OPEN_CODEBASE_MANAGER_SCHEMA.outputSchema);
       const output = {
         url: 'http://localhost:8008',
-        message: 'Manager UI opened in default browser',
+        message: 'Knowledge Base Manager UI opened in default browser',
       };
       expect(validate(output)).toBe(true);
     });
@@ -485,7 +485,7 @@ describe('MCP Tool Schemas', () => {
             chunkType: 'invalid',
             content: 'test',
             similarityScore: 0.5,
-            codebaseName: 'test',
+            knowledgeBaseName: 'test',
           },
         ],
         totalResults: 1,
@@ -506,7 +506,7 @@ describe('MCP Tool Schemas', () => {
             chunkType: 'function',
             content: 'test',
             similarityScore: score,
-            codebaseName: 'test',
+            knowledgeBaseName: 'test',
           },
         ],
         totalResults: 1,

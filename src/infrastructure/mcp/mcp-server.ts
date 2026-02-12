@@ -19,7 +19,7 @@ import addFormatsModule from 'ajv-formats';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { Config } from '../../shared/types/index.js';
-import type { CodebaseService } from '../../domains/codebase/codebase.service.js';
+import type { KnowledgeBaseService } from '../../domains/knowledgebase/codebase.service.js';
 import type { SearchService } from '../../domains/search/search.service.js';
 import {
   ALL_TOOL_SCHEMAS,
@@ -62,12 +62,12 @@ enum MCPErrorCode {
 export class MCPServer {
   private server: Server;
   private ajv: InstanceType<typeof Ajv>;
-  private codebaseService: CodebaseService;
+  private codebaseService: KnowledgeBaseService;
   private searchService: SearchService;
   private config: Config;
 
   constructor(
-    codebaseService: CodebaseService,
+    codebaseService: KnowledgeBaseService,
     searchService: SearchService,
     config: Config
   ) {
@@ -156,7 +156,7 @@ export class MCPServer {
     this.validateInput(LIST_CODEBASES_SCHEMA.inputSchema, args);
 
     // Call service
-    const codebases = await this.codebaseService.listCodebases();
+    const codebases = await this.codebaseService.listKnowledgeBases();
 
     // Format response
     return {
@@ -180,7 +180,7 @@ export class MCPServer {
     // Call service
     const results = await this.searchService.search({
       query: input.query,
-      codebaseName: input.codebaseName,
+      knowledgeBaseName: input.codebaseName,
       language: input.language,
       maxResults: input.maxResults,
     });
@@ -206,7 +206,7 @@ export class MCPServer {
 
     try {
       // Call service
-      const stats = await this.codebaseService.getCodebaseStats(input.name);
+      const stats = await this.codebaseService.getKnowledgeBaseStats(input.name);
 
       // Format response
       return {
@@ -225,7 +225,7 @@ export class MCPServer {
       ) {
         throw this.createError(
           MCPErrorCode.NOT_FOUND,
-          `Codebase '${input.name}' not found`
+          `Knowledge base '${input.name}' not found`
         );
       }
       throw error;
@@ -264,7 +264,7 @@ export class MCPServer {
             text: JSON.stringify(
               {
                 url,
-                message: `Opening codebase manager at ${url}`,
+                message: `Opening knowledge base manager at ${url}`,
                 serverStarted: !isRunning,
               },
               null,
@@ -282,7 +282,7 @@ export class MCPServer {
             text: JSON.stringify(
               {
                 url,
-                message: `Codebase manager is available at ${url} (failed to open browser automatically)`,
+                message: `Knowledge base manager is available at ${url} (failed to open browser automatically)`,
                 error: error instanceof Error ? error.message : String(error),
               },
               null,

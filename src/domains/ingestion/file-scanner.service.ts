@@ -11,7 +11,6 @@
 import { promises as fs, type Dirent } from 'node:fs';
 import path from 'node:path';
 import ignore, { type Ignore } from 'ignore';
-import { LanguageDetectionService } from '../parsing/language-detection.service.js';
 import { createLogger } from '../../shared/logging/logger.js';
 
 const logger = createLogger('info').child('FileScannerService');
@@ -36,7 +35,6 @@ export interface ScannedFile {
   relativePath: string;
   extension: string;
   supported: boolean;
-  language: string | null;
 }
 
 /**
@@ -52,10 +50,8 @@ export interface ScanOptions {
  * File Scanner Service
  */
 export class FileScannerService {
-  private languageDetection: LanguageDetectionService;
-
   constructor() {
-    this.languageDetection = new LanguageDetectionService();
+    // No dependencies needed
   }
 
   /**
@@ -185,27 +181,31 @@ export class FileScannerService {
           continue;
         }
 
-        // Classify file
-        const classification = this.languageDetection.classifyFile(fullPath);
+        // Get file extension
+        const ext = path.extname(fullPath).toLowerCase();
+        
+        // For now, mark all files as supported (will be refined in later tasks)
+        // This is a temporary implementation until document type detection is added
+        const supported = ext.length > 0;
+        
         statistics.totalFiles++;
 
-        if (classification.supported) {
+        if (supported) {
           statistics.supportedFiles++;
         } else {
           statistics.unsupportedFiles++;
           
           // Track unsupported extensions
-          const ext = classification.extension || '(no extension)';
-          const count = statistics.unsupportedByExtension.get(ext) || 0;
-          statistics.unsupportedByExtension.set(ext, count + 1);
+          const extKey = ext || '(no extension)';
+          const count = statistics.unsupportedByExtension.get(extKey) || 0;
+          statistics.unsupportedByExtension.set(extKey, count + 1);
         }
 
         files.push({
           path: fullPath,
           relativePath,
-          extension: classification.extension,
-          supported: classification.supported,
-          language: classification.language,
+          extension: ext,
+          supported,
         });
       }
     }
@@ -253,25 +253,5 @@ export class FileScannerService {
    */
   getUnsupportedFiles(files: ScannedFile[]): ScannedFile[] {
     return files.filter((file) => !file.supported);
-  }
-
-  /**
-   * Group files by language
-   * 
-   * @param files - Array of scanned files
-   * @returns Map of language to files
-   */
-  groupByLanguage(files: ScannedFile[]): Map<string, ScannedFile[]> {
-    const grouped = new Map<string, ScannedFile[]>();
-
-    for (const file of files) {
-      if (file.language) {
-        const existing = grouped.get(file.language) || [];
-        existing.push(file);
-        grouped.set(file.language, existing);
-      }
-    }
-
-    return grouped;
   }
 }

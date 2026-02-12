@@ -3,10 +3,10 @@
 /**
  * Ingestion CLI Entry Point
  * 
- * Command-line interface for ingesting codebases into the semantic search system.
+ * Command-line interface for ingesting knowledge bases into the semantic search system.
  * 
  * Usage:
- *   ingest --path <directory> --name <codebase-name> [--config <config-file>]
+ *   ingest --path <directory> --name <knowledge-base-name> [--config <config-file>]
  * 
  * Requirements: 9.2, 9.4
  */
@@ -54,10 +54,10 @@ async function main() {
 
   program
     .name('ingest')
-    .description('Ingest a codebase for semantic search')
+    .description('Ingest a knowledge base for semantic search')
     .version('0.1.0')
-    .requiredOption('-p, --path <directory>', 'Path to codebase directory')
-    .requiredOption('-n, --name <name>', 'Unique name for the codebase')
+    .requiredOption('-p, --path <directory>', 'Path to knowledge base directory')
+    .requiredOption('-n, --name <name>', 'Unique name for the knowledge base')
     .option('-c, --config <file>', 'Path to configuration file')
     .option('--no-gitignore', 'Disable .gitignore filtering (include all files)')
     .parse(process.argv);
@@ -77,9 +77,9 @@ async function main() {
     }
 
     // Resolve and validate path
-    const codebasePath = resolve(options.path);
-    if (!existsSync(codebasePath)) {
-      console.error(`Error: Directory not found: ${codebasePath}`);
+    const knowledgeBasePath = resolve(options.path);
+    if (!existsSync(knowledgeBasePath)) {
+      console.error(`Error: Directory not found: ${knowledgeBasePath}`);
       process.exit(1);
     }
 
@@ -87,8 +87,8 @@ async function main() {
     const config = loadConfig(options.config);
     const logger = createLogger(config.logging.level);
 
-    console.log(`\nIngesting codebase: ${options.name}`);
-    console.log(`Path: ${codebasePath}`);
+    console.log(`\nIngesting knowledge base: ${options.name}`);
+    console.log(`Path: ${knowledgeBasePath}`);
     console.log('');
 
     // Initialize services
@@ -134,7 +134,7 @@ async function main() {
     // Run ingestion
     const stats = await ingestionService.ingestCodebase(
       {
-        path: codebasePath,
+        path: knowledgeBasePath,
         name: options.name,
         config,
         respectGitignore: options.gitignore !== false, // Commander sets to false if --no-gitignore is used
@@ -154,20 +154,6 @@ async function main() {
     console.log(`  Duration: ${formatDuration(stats.durationMs)}`);
     console.log('');
 
-    // Print language distribution
-    if (stats.languages.size > 0) {
-      console.log('Languages detected:');
-      const sortedLanguages = Array.from(stats.languages.values()).sort(
-        (a, b) => b.chunkCount - a.chunkCount
-      );
-      for (const lang of sortedLanguages) {
-        console.log(
-          `  ${lang.language}: ${lang.chunkCount} chunks (${lang.fileCount} files)`
-        );
-      }
-      console.log('');
-    }
-
     // Print unsupported file summary
     if (stats.unsupportedFiles.size > 0) {
       console.log('Unsupported files by extension:');
@@ -181,7 +167,7 @@ async function main() {
     }
 
     logger.info('Ingestion completed', {
-      codebaseName: options.name,
+      knowledgeBaseName: options.name,
       ...stats,
     });
 

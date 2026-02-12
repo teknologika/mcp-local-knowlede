@@ -85,30 +85,30 @@ export class LanceDBClientWrapper {
   /**
    * Generate table name following the pattern: codebase_{name}_{schemaVersion}
    */
-  public static getTableName(codebaseName: string): string {
+  public static getTableName(knowledgeBaseName: string): string {
     // Replace any characters that might not be valid in table names
-    const sanitizedName = codebaseName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const sanitizedName = knowledgeBaseName.replace(/[^a-zA-Z0-9_-]/g, '_');
     return `codebase_${sanitizedName}_${SCHEMA_VERSION.replace(/\./g, '_')}`;
   }
 
   /**
    * Create a new table for a codebase
    */
-  async createTable(codebaseName: string, data: any[], metadata?: Record<string, any>): Promise<void> {
+  async createTable(knowledgeBaseName: string, data: any[], metadata?: Record<string, any>): Promise<void> {
     await this.ensureInitialized();
 
-    const tableName = LanceDBClientWrapper.getTableName(codebaseName);
+    const tableName = LanceDBClientWrapper.getTableName(knowledgeBaseName);
     
     try {
       this.logger.info('Creating LanceDB table', {
-        codebaseName,
+        codebaseName: knowledgeBaseName,
         tableName,
       });
 
       // Add metadata to the first record
       const dataWithMetadata = data.map(record => ({
         ...record,
-        _codebaseName: codebaseName,
+        _knowledgeBaseName: knowledgeBaseName,
         _schemaVersion: SCHEMA_VERSION,
         _createdAt: new Date().toISOString(),
         ...metadata,
@@ -117,7 +117,7 @@ export class LanceDBClientWrapper {
       await this.connection!.createTable(tableName, dataWithMetadata);
 
       this.logger.info('Table created successfully', {
-        codebaseName,
+        codebaseName: knowledgeBaseName,
         tableName,
       });
     } catch (error) {
@@ -125,10 +125,10 @@ export class LanceDBClientWrapper {
       this.logger.error(
         'Failed to create table',
         error instanceof Error ? error : new Error(errorMessage),
-        { codebaseName, tableName }
+        { codebaseName: knowledgeBaseName, tableName }
       );
       throw new LanceDBError(
-        `Failed to create table for codebase '${codebaseName}': ${errorMessage}`,
+        `Failed to create table for knowledge base '${knowledgeBaseName}': ${errorMessage}`,
         error
       );
     }
@@ -138,14 +138,14 @@ export class LanceDBClientWrapper {
    * Get or create a table for a codebase
    * Returns null if table doesn't exist (caller should create it with actual data)
    */
-  async getOrCreateTable(codebaseName: string): Promise<Table | null> {
+  async getOrCreateTable(knowledgeBaseName: string): Promise<Table | null> {
     await this.ensureInitialized();
 
-    const tableName = LanceDBClientWrapper.getTableName(codebaseName);
+    const tableName = LanceDBClientWrapper.getTableName(knowledgeBaseName);
     
     try {
       this.logger.debug('Getting LanceDB table', {
-        codebaseName,
+        codebaseName: knowledgeBaseName,
         tableName,
       });
 
@@ -158,7 +158,7 @@ export class LanceDBClientWrapper {
 
       // Return null - caller should create table with actual data
       this.logger.debug('Table does not exist, returning null', {
-        codebaseName,
+        codebaseName: knowledgeBaseName,
         tableName,
       });
       return null;
@@ -167,10 +167,10 @@ export class LanceDBClientWrapper {
       this.logger.error(
         'Failed to get table',
         error instanceof Error ? error : new Error(errorMessage),
-        { codebaseName, tableName }
+        { codebaseName: knowledgeBaseName, tableName }
       );
       throw new LanceDBError(
-        `Failed to get table for codebase '${codebaseName}': ${errorMessage}`,
+        `Failed to get table for knowledge base '${knowledgeBaseName}': ${errorMessage}`,
         error
       );
     }
@@ -179,14 +179,14 @@ export class LanceDBClientWrapper {
   /**
    * Create a table with initial data
    */
-  async createTableWithData(codebaseName: string, data: any[]): Promise<Table> {
+  async createTableWithData(knowledgeBaseName: string, data: any[]): Promise<Table> {
     await this.ensureInitialized();
 
-    const tableName = LanceDBClientWrapper.getTableName(codebaseName);
+    const tableName = LanceDBClientWrapper.getTableName(knowledgeBaseName);
     
     try {
       this.logger.info('Creating LanceDB table with data', {
-        codebaseName,
+        codebaseName: knowledgeBaseName,
         tableName,
         rowCount: data.length,
       });
@@ -195,7 +195,7 @@ export class LanceDBClientWrapper {
       const table = await this.connection!.openTable(tableName);
 
       this.logger.info('Table created successfully', {
-        codebaseName,
+        codebaseName: knowledgeBaseName,
         tableName,
       });
 
@@ -205,10 +205,10 @@ export class LanceDBClientWrapper {
       this.logger.error(
         'Failed to create table with data',
         error instanceof Error ? error : new Error(errorMessage),
-        { codebaseName, tableName }
+        { codebaseName: knowledgeBaseName, tableName }
       );
       throw new LanceDBError(
-        `Failed to create table for codebase '${codebaseName}': ${errorMessage}`,
+        `Failed to create table for knowledge base '${knowledgeBaseName}': ${errorMessage}`,
         error
       );
     }
@@ -217,14 +217,14 @@ export class LanceDBClientWrapper {
   /**
    * Check if a table exists
    */
-  async tableExists(codebaseName: string): Promise<boolean> {
+  async tableExists(knowledgeBaseName: string): Promise<boolean> {
     await this.ensureInitialized();
 
-    const tableName = LanceDBClientWrapper.getTableName(codebaseName);
+    const tableName = LanceDBClientWrapper.getTableName(knowledgeBaseName);
     
     try {
       this.logger.debug('Checking if table exists', {
-        codebaseName,
+        codebaseName: knowledgeBaseName,
         tableName,
       });
 
@@ -232,7 +232,7 @@ export class LanceDBClientWrapper {
       return tableNames.includes(tableName);
     } catch (error) {
       this.logger.debug('Table check failed', {
-        codebaseName,
+        codebaseName: knowledgeBaseName,
         tableName,
       });
       return false;
@@ -242,21 +242,21 @@ export class LanceDBClientWrapper {
   /**
    * Delete a table by codebase name
    */
-  async deleteTable(codebaseName: string): Promise<void> {
+  async deleteTable(knowledgeBaseName: string): Promise<void> {
     await this.ensureInitialized();
 
-    const tableName = LanceDBClientWrapper.getTableName(codebaseName);
+    const tableName = LanceDBClientWrapper.getTableName(knowledgeBaseName);
     
     try {
       this.logger.info('Deleting LanceDB table', {
-        codebaseName,
+        codebaseName: knowledgeBaseName,
         tableName,
       });
 
       await this.connection!.dropTable(tableName);
 
       this.logger.info('Table deleted successfully', {
-        codebaseName,
+        codebaseName: knowledgeBaseName,
         tableName,
       });
     } catch (error) {
@@ -264,10 +264,10 @@ export class LanceDBClientWrapper {
       this.logger.error(
         'Failed to delete table',
         error instanceof Error ? error : new Error(errorMessage),
-        { codebaseName, tableName }
+        { codebaseName: knowledgeBaseName, tableName }
       );
       throw new LanceDBError(
-        `Failed to delete table for codebase '${codebaseName}': ${errorMessage}`,
+        `Failed to delete table for knowledge base '${knowledgeBaseName}': ${errorMessage}`,
         error
       );
     }

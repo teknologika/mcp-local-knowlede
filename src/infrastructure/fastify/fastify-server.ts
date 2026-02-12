@@ -1,6 +1,6 @@
 /**
  * Fastify server for the Manager UI and HTTP API
- * Provides web interface and REST endpoints for codebase management
+ * Provides web interface and REST endpoints for knowledge base management
  */
 
 import Fastify, { FastifyInstance } from 'fastify';
@@ -14,7 +14,7 @@ import fastifyFormbody from '@fastify/formbody';
 import handlebars from 'handlebars';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import type { CodebaseService } from '../../domains/codebase/codebase.service.js';
+import type { KnowledgeBaseService } from '../../domains/knowledgebase/codebase.service.js';
 import type { SearchService } from '../../domains/search/search.service.js';
 import type { IngestionService } from '../../domains/ingestion/ingestion.service.js';
 import type { Config } from '../../shared/types/index.js';
@@ -45,13 +45,13 @@ export class FastifyServerError extends Error {
 export class FastifyServer {
   private fastify: FastifyInstance;
   private config: Config;
-  private codebaseService: CodebaseService;
+  private codebaseService: KnowledgeBaseService;
   private searchService: SearchService;
   private ingestionService: IngestionService;
   private isRunning = false;
 
   constructor(
-    codebaseService: CodebaseService,
+    codebaseService: KnowledgeBaseService,
     searchService: SearchService,
     ingestionService: IngestionService,
     config: Config

@@ -1,10 +1,10 @@
 /**
  * HTTP API routes for the Fastify server
- * Provides REST endpoints for codebase management and search
+ * Provides REST endpoints for knowledge base management and search
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { CodebaseService } from '../../domains/codebase/codebase.service.js';
+import type { KnowledgeBaseService } from '../../domains/knowledgebase/codebase.service.js';
 import type { SearchService } from '../../domains/search/search.service.js';
 import AjvModule from 'ajv';
 import addFormatsModule from 'ajv-formats';
@@ -29,7 +29,7 @@ const schemas = {
     type: 'object',
     properties: {
       query: { type: 'string', minLength: 1 },
-      codebaseName: { type: 'string' },
+      knowledgeBaseName: { type: 'string' },
       language: { type: 'string' },
       maxResults: { type: 'integer', minimum: 1, maximum: 1000 },
     },
@@ -83,26 +83,26 @@ function createErrorResponse(
  */
 export async function registerRoutes(
   fastify: FastifyInstance,
-  codebaseService: CodebaseService,
+  codebaseService: KnowledgeBaseService,
   searchService: SearchService
 ): Promise<void> {
   /**
    * GET /api/codebases
-   * List all codebases with metadata
+   * List all knowledge bases with metadata
    */
   fastify.get('/api/codebases', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       logger.info('GET /api/codebases');
-      const codebases = await codebaseService.listCodebases();
+      const codebases = await codebaseService.listKnowledgeBases();
       return { codebases };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('Failed to list codebases', error instanceof Error ? error : new Error(errorMessage));
+      logger.error('Failed to list knowledge bases', error instanceof Error ? error : new Error(errorMessage));
       
       reply.status(500);
       return createErrorResponse(
         'INTERNAL_ERROR',
-        'Failed to list codebases',
+        'Failed to list knowledge bases',
         errorMessage
       );
     }
@@ -110,7 +110,7 @@ export async function registerRoutes(
 
   /**
    * POST /api/search
-   * Search codebases with query and filters
+   * Search knowledge bases with query and filters
    */
   fastify.post('/api/search', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
@@ -128,7 +128,7 @@ export async function registerRoutes(
 
       const params = request.body as {
         query: string;
-        codebaseName?: string;
+        knowledgeBaseName?: string;
         language?: string;
         maxResults?: number;
       };
@@ -150,7 +150,7 @@ export async function registerRoutes(
 
   /**
    * GET /api/codebases/:name/stats
-   * Get detailed statistics for a codebase
+   * Get detailed statistics for a knowledge base
    */
   fastify.get<{ Params: { name: string } }>(
     '/api/codebases/:name/stats',
@@ -163,30 +163,30 @@ export async function registerRoutes(
           reply.status(400);
           return createErrorResponse(
             'VALIDATION_ERROR',
-            'Codebase name is required'
+            'Knowledge base name is required'
           );
         }
 
-        const stats = await codebaseService.getCodebaseStats(name);
+        const stats = await codebaseService.getKnowledgeBaseStats(name);
         return stats;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         
         // Check if it's a not found error
         if (errorMessage.includes('not found') || errorMessage.includes('does not exist')) {
-          logger.warn('Codebase not found', { name: request.params.name });
+          logger.warn('Knowledge base not found', { name: request.params.name });
           reply.status(404);
           return createErrorResponse(
             'NOT_FOUND',
-            `Codebase '${request.params.name}' not found`
+            `Knowledge base '${request.params.name}' not found`
           );
         }
 
-        logger.error('Failed to get codebase stats', error instanceof Error ? error : new Error(errorMessage));
+        logger.error('Failed to get knowledge base stats', error instanceof Error ? error : new Error(errorMessage));
         reply.status(500);
         return createErrorResponse(
           'INTERNAL_ERROR',
-          'Failed to get codebase statistics',
+          'Failed to get knowledge base statistics',
           errorMessage
         );
       }
@@ -195,7 +195,7 @@ export async function registerRoutes(
 
   /**
    * PUT /api/codebases/:name
-   * Rename a codebase
+   * Rename a knowledge base
    */
   fastify.put<{ Params: { name: string } }>(
     '/api/codebases/:name',
@@ -208,7 +208,7 @@ export async function registerRoutes(
           reply.status(400);
           return createErrorResponse(
             'VALIDATION_ERROR',
-            'Codebase name is required'
+            'Knowledge base name is required'
           );
         }
 
@@ -224,30 +224,30 @@ export async function registerRoutes(
 
         const { newName } = request.body as { newName: string };
 
-        await codebaseService.renameCodebase(name, newName);
+        await codebaseService.renameKnowledgeBase(name, newName);
         
         return {
           success: true,
-          message: `Codebase '${name}' renamed to '${newName}'`,
+          message: `Knowledge base '${name}' renamed to '${newName}'`,
         };
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         
         // Check if it's a not found error
         if (errorMessage.includes('not found') || errorMessage.includes('does not exist')) {
-          logger.warn('Codebase not found', { name: request.params.name });
+          logger.warn('Knowledge base not found', { name: request.params.name });
           reply.status(404);
           return createErrorResponse(
             'NOT_FOUND',
-            `Codebase '${request.params.name}' not found`
+            `Knowledge base '${request.params.name}' not found`
           );
         }
 
-        logger.error('Failed to rename codebase', error instanceof Error ? error : new Error(errorMessage));
+        logger.error('Failed to rename knowledge base', error instanceof Error ? error : new Error(errorMessage));
         reply.status(500);
         return createErrorResponse(
           'INTERNAL_ERROR',
-          'Failed to rename codebase',
+          'Failed to rename knowledge base',
           errorMessage
         );
       }
@@ -256,7 +256,7 @@ export async function registerRoutes(
 
   /**
    * DELETE /api/codebases/:name
-   * Delete a codebase and all its chunks
+   * Delete a knowledge base and all its chunks
    */
   fastify.delete<{ Params: { name: string } }>(
     '/api/codebases/:name',
@@ -269,34 +269,34 @@ export async function registerRoutes(
           reply.status(400);
           return createErrorResponse(
             'VALIDATION_ERROR',
-            'Codebase name is required'
+            'Knowledge base name is required'
           );
         }
 
-        await codebaseService.deleteCodebase(name);
+        await codebaseService.deleteKnowledgeBase(name);
         
         return {
           success: true,
-          message: `Codebase '${name}' deleted successfully`,
+          message: `Knowledge base '${name}' deleted successfully`,
         };
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         
         // Check if it's a not found error
         if (errorMessage.includes('not found') || errorMessage.includes('does not exist')) {
-          logger.warn('Codebase not found', { name: request.params.name });
+          logger.warn('Knowledge base not found', { name: request.params.name });
           reply.status(404);
           return createErrorResponse(
             'NOT_FOUND',
-            `Codebase '${request.params.name}' not found`
+            `Knowledge base '${request.params.name}' not found`
           );
         }
 
-        logger.error('Failed to delete codebase', error instanceof Error ? error : new Error(errorMessage));
+        logger.error('Failed to delete knowledge base', error instanceof Error ? error : new Error(errorMessage));
         reply.status(500);
         return createErrorResponse(
           'INTERNAL_ERROR',
-          'Failed to delete codebase',
+          'Failed to delete knowledge base',
           errorMessage
         );
       }
@@ -324,7 +324,7 @@ export async function registerRoutes(
           reply.status(400);
           return createErrorResponse(
             'VALIDATION_ERROR',
-            'Codebase name is required'
+            'Knowledge base name is required'
           );
         }
 
@@ -341,18 +341,18 @@ export async function registerRoutes(
         return {
           success: true,
           chunksDeleted,
-          message: `Deleted ${chunksDeleted} chunks from codebase '${name}' at timestamp '${timestamp}'`,
+          message: `Deleted ${chunksDeleted} chunks from knowledge base '${name}' at timestamp '${timestamp}'`,
         };
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         
         // Check if it's a not found error
         if (errorMessage.includes('not found') || errorMessage.includes('does not exist')) {
-          logger.warn('Codebase not found', { name: request.params.name });
+          logger.warn('Knowledge base not found', { name: request.params.name });
           reply.status(404);
           return createErrorResponse(
             'NOT_FOUND',
-            `Codebase '${request.params.name}' not found`
+            `Knowledge base '${request.params.name}' not found`
           );
         }
 

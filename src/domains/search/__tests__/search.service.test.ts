@@ -72,7 +72,7 @@ describe('SearchService', () => {
                   chunkType: 'function',
                   content: 'function test() {}',
                   _distance: 0.2,
-                  _codebaseName: 'test-project',
+                  _knowledgeBaseName: 'test-project',
                 },
                 {
                   filePath: '/path/to/file2.ts',
@@ -82,7 +82,7 @@ describe('SearchService', () => {
                   chunkType: 'class',
                   content: 'class Test {}',
                   _distance: 0.5,
-                  _codebaseName: 'test-project',
+                  _knowledgeBaseName: 'test-project',
                 },
               ]),
             }),
@@ -93,8 +93,8 @@ describe('SearchService', () => {
       vi.mocked(mockEmbeddingService.generateEmbedding).mockResolvedValue(mockQueryEmbedding);
       vi.mocked(mockLanceClient.listTables).mockResolvedValue([
         {
-          name: 'codebase_test-project_1_0_0',
-          metadata: { codebaseName: 'test-project' },
+          name: 'knowledgebase_test-project_1_0_0',
+          metadata: { knowledgeBaseName: 'test-project' },
         },
       ]);
       vi.mocked(mockLanceClient.getOrCreateTable).mockResolvedValue(mockTable as any);
@@ -114,7 +114,7 @@ describe('SearchService', () => {
       expect(result.results[0].content).toBe('function test() {}');
     });
 
-    it('should filter by codebase name', async () => {
+    it('should filter by knowledge base name', async () => {
       const mockQueryEmbedding = new Array(384).fill(0.1);
       
       vi.mocked(mockEmbeddingService.generateEmbedding).mockResolvedValue(mockQueryEmbedding);
@@ -134,7 +134,7 @@ describe('SearchService', () => {
 
       const params: SearchParams = {
         query: 'test query',
-        codebaseName: 'specific-project',
+        knowledgeBaseName: 'specific-project',
       };
 
       await service.search(params);
@@ -162,8 +162,8 @@ describe('SearchService', () => {
       vi.mocked(mockEmbeddingService.generateEmbedding).mockResolvedValue(mockQueryEmbedding);
       vi.mocked(mockLanceClient.listTables).mockResolvedValue([
         {
-          name: 'codebase_test-project_1_0_0',
-          metadata: { codebaseName: 'test-project' },
+          name: 'knowledgebase_test-project_1_0_0',
+          metadata: { knowledgeBaseName: 'test-project' },
         },
       ]);
       vi.mocked(mockLanceClient.getOrCreateTable).mockResolvedValue(mockTable as any);
@@ -196,8 +196,8 @@ describe('SearchService', () => {
       vi.mocked(mockEmbeddingService.generateEmbedding).mockResolvedValue(mockQueryEmbedding);
       vi.mocked(mockLanceClient.listTables).mockResolvedValue([
         {
-          name: 'codebase_test-project_1_0_0',
-          metadata: { codebaseName: 'test-project' },
+          name: 'knowledgebase_test-project_1_0_0',
+          metadata: { knowledgeBaseName: 'test-project' },
         },
       ]);
       vi.mocked(mockLanceClient.getOrCreateTable).mockResolvedValue(mockTable as any);
@@ -228,7 +228,7 @@ describe('SearchService', () => {
                   chunkType: 'function',
                   content: 'function test() {}',
                   _distance: 0.2,
-                  _codebaseName: 'test-project',
+                  _knowledgeBaseName: 'test-project',
                 },
               ]),
             }),
@@ -239,8 +239,8 @@ describe('SearchService', () => {
       vi.mocked(mockEmbeddingService.generateEmbedding).mockResolvedValue(mockQueryEmbedding);
       vi.mocked(mockLanceClient.listTables).mockResolvedValue([
         {
-          name: 'codebase_test-project_1_0_0',
-          metadata: { codebaseName: 'test-project' },
+          name: 'knowledgebase_test-project_1_0_0',
+          metadata: { knowledgeBaseName: 'test-project' },
         },
       ]);
       vi.mocked(mockLanceClient.getOrCreateTable).mockResolvedValue(mockTable as any);

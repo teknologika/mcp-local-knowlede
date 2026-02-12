@@ -16,7 +16,7 @@
 import { loadConfig } from '../shared/config/index.js';
 import { LanceDBClientWrapper } from '../infrastructure/lancedb/lancedb.client.js';
 import { HuggingFaceEmbeddingService } from '../domains/embedding/index.js';
-import { CodebaseService } from '../domains/codebase/codebase.service.js';
+import { KnowledgeBaseService } from '../domains/knowledgebase/codebase.service.js';
 import { SearchService } from '../domains/search/search.service.js';
 import { MCPServer } from '../infrastructure/mcp/mcp-server.js';
 
@@ -69,8 +69,8 @@ async function main() {
     const embeddingService = new HuggingFaceEmbeddingService(config, silentLogger);
     // Don't initialize yet - let it initialize on first use to avoid blocking startup
 
-    // Initialize codebase service
-    const codebaseService = new CodebaseService(lanceClient, config);
+    // Initialize knowledge base service
+    const codebaseService = new KnowledgeBaseService(lanceClient, config);
 
     // Initialize search service
     const searchService = new SearchService(

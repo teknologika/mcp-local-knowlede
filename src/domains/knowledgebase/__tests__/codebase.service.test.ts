@@ -1,15 +1,15 @@
 /**
- * Unit tests for CodebaseService
+ * Unit tests for KnowledgeBaseService
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CodebaseService, CodebaseError } from '../codebase.service.js';
+import { KnowledgeBaseService, KnowledgeBaseError } from '../codebase.service.js';
 import { LanceDBClientWrapper } from '../../../infrastructure/lancedb/lancedb.client.js';
 import type { Config } from '../../../shared/types/index.js';
 import { DEFAULT_CONFIG } from '../../../shared/config/config.js';
 
-describe('CodebaseService', () => {
-  let service: CodebaseService;
+describe('KnowledgeBaseService', () => {
+  let service: KnowledgeBaseService;
   let mockLanceClient: LanceDBClientWrapper;
   let config: Config;
 
@@ -24,25 +24,25 @@ describe('CodebaseService', () => {
       deleteTable: vi.fn(),
     } as any;
 
-    service = new CodebaseService(mockLanceClient, config);
+    service = new KnowledgeBaseService(mockLanceClient, config);
   });
 
-  describe('listCodebases', () => {
+  describe('listKnowledgeBases', () => {
     it('should return empty array when no tables exist', async () => {
       vi.mocked(mockLanceClient.listTables).mockResolvedValue([]);
 
-      const result = await service.listCodebases();
+      const result = await service.listKnowledgeBases();
 
       expect(result).toEqual([]);
       expect(mockLanceClient.listTables).toHaveBeenCalledOnce();
     });
 
-    it('should return codebases with metadata', async () => {
+    it('should return knowledge bases with metadata', async () => {
       const mockTables = [
         {
-          name: 'codebase_test-project_1_0_0',
+          name: 'knowledgebase_test-project_1_0_0',
           metadata: {
-            codebaseName: 'test-project',
+            knowledgeBaseName: 'test-project',
             path: '/path/to/project',
             fileCount: 10,
             lastIngestion: '2024-01-01T00:00:00Z',
@@ -84,7 +84,7 @@ describe('CodebaseService', () => {
       vi.mocked(mockLanceClient.listTables).mockResolvedValue(mockTables);
       vi.mocked(mockLanceClient.getOrCreateTable).mockResolvedValue(mockTable as any);
 
-      const result = await service.listCodebases();
+      const result = await service.listKnowledgeBases();
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
@@ -97,7 +97,7 @@ describe('CodebaseService', () => {
       });
     });
 
-    it('should skip tables without codebaseName metadata', async () => {
+    it('should skip tables without knowledgeBaseName metadata', async () => {
       const mockTables = [
         {
           name: 'some-other-table',
@@ -107,36 +107,36 @@ describe('CodebaseService', () => {
 
       vi.mocked(mockLanceClient.listTables).mockResolvedValue(mockTables);
 
-      const result = await service.listCodebases();
+      const result = await service.listKnowledgeBases();
 
       expect(result).toEqual([]);
     });
 
-    it('should throw CodebaseError on failure', async () => {
+    it('should throw KnowledgeBaseError on failure', async () => {
       vi.mocked(mockLanceClient.listTables).mockRejectedValue(
         new Error('Connection failed')
       );
 
-      await expect(service.listCodebases()).rejects.toThrow(CodebaseError);
-      await expect(service.listCodebases()).rejects.toThrow('Failed to list codebases');
+      await expect(service.listKnowledgeBases()).rejects.toThrow(KnowledgeBaseError);
+      await expect(service.listKnowledgeBases()).rejects.toThrow('Failed to list knowledge bases');
     });
   });
 
-  describe('deleteCodebase', () => {
-    it('should delete codebase table', async () => {
+  describe('deleteKnowledgeBase', () => {
+    it('should delete knowledge base table', async () => {
       vi.mocked(mockLanceClient.deleteTable).mockResolvedValue();
 
-      await service.deleteCodebase('test-project');
+      await service.deleteKnowledgeBase('test-project');
 
       expect(mockLanceClient.deleteTable).toHaveBeenCalledWith('test-project');
     });
 
-    it('should throw CodebaseError on deletion failure', async () => {
+    it('should throw KnowledgeBaseError on deletion failure', async () => {
       vi.mocked(mockLanceClient.deleteTable).mockRejectedValue(
         new Error('Delete failed')
       );
 
-      await expect(service.deleteCodebase('test-project')).rejects.toThrow(CodebaseError);
+      await expect(service.deleteKnowledgeBase('test-project')).rejects.toThrow(KnowledgeBaseError);
     });
   });
 

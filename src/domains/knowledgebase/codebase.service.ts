@@ -1,12 +1,11 @@
 /**
- * Codebase service for CRUD operations
- * Manages codebase metadata, statistics, and lifecycle operations
+ * Knowledge base service for CRUD operations
+ * Manages knowledge base metadata, statistics, and lifecycle operations
  */
 
 import type { 
-  CodebaseMetadata, 
-  CodebaseStats, 
-  LanguageStats, 
+  KnowledgeBaseMetadata, 
+  KnowledgeBaseStats, 
   ChunkTypeStats,
   Config 
 } from '../../shared/types/index.js';
@@ -14,23 +13,23 @@ import { LanceDBClientWrapper } from '../../infrastructure/lancedb/lancedb.clien
 import { createLogger } from '../../shared/logging/index.js';
 
 const rootLogger = createLogger('info');
-const logger = rootLogger.child('CodebaseService');
+const logger = rootLogger.child('KnowledgeBaseService');
 
 /**
- * Error thrown when codebase operations fail
+ * Error thrown when knowledge base operations fail
  */
-export class CodebaseError extends Error {
+export class KnowledgeBaseError extends Error {
   constructor(message: string, public cause?: unknown) {
     super(message);
-    this.name = 'CodebaseError';
+    this.name = 'KnowledgeBaseError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
 
 /**
- * Service for managing codebases
+ * Service for managing knowledge bases
  */
-export class CodebaseService {
+export class KnowledgeBaseService {
   private lanceClient: LanceDBClientWrapper;
 
   constructor(lanceClient: LanceDBClientWrapper, _config: Config) {
@@ -38,24 +37,24 @@ export class CodebaseService {
   }
 
   /**
-   * List all codebases with metadata
+   * List all knowledge bases with metadata
    */
-  async listCodebases(): Promise<CodebaseMetadata[]> {
+  async listKnowledgeBases(): Promise<KnowledgeBaseMetadata[]> {
     try {
-      logger.debug('Listing all codebases');
+      logger.debug('Listing all knowledge bases');
 
       const tables = await this.lanceClient.listTables();
-      const codebases: CodebaseMetadata[]  = [];
+      const knowledgeBases: KnowledgeBaseMetadata[]  = [];
 
       for (const table of tables) {
         const metadata = table.metadata;
         
-        // Only include tables that are codebase tables
-        if (!metadata?.codebaseName) {
+        // Only include tables that are knowledge base tables
+        if (!metadata?.knowledgeBaseName) {
           continue;
         }
 
-        const codebaseName = metadata.codebaseName as string;
+        const knowledgeBaseName = metadata.knowledgeBaseName as string;
         
         // Open table directly by name
         const lanceTable = await this.lanceClient.getConnection().openTable(table.name);
@@ -89,11 +88,11 @@ export class CodebaseService {
           }
         } catch (error) {
           // Silently ignore metadata errors - table may be corrupted or incompatible
-          // This is not critical for listing codebases
+          // This is not critical for listing knowledge bases
         }
 
-        codebases.push({
-          name: codebaseName,
+        knowledgeBases.push({
+          name: knowledgeBaseName,
           path,
           chunkCount: count,
           fileCount,
@@ -102,31 +101,31 @@ export class CodebaseService {
         });
       }
 
-      logger.debug('Codebases listed successfully', { count: codebases.length });
-      return codebases;
+      logger.debug('Knowledge bases listed successfully', { count: knowledgeBases.length });
+      return knowledgeBases;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(
-        'Failed to list codebases',
+        'Failed to list knowledge bases',
         error instanceof Error ? error : new Error(errorMessage)
       );
-      throw new CodebaseError(
-        `Failed to list codebases: ${errorMessage}`,
+      throw new KnowledgeBaseError(
+        `Failed to list knowledge bases: ${errorMessage}`,
         error
       );
     }
   }
 
   /**
-   * Get detailed statistics for a codebase
+   * Get detailed statistics for a knowledge base
    */
-  async getCodebaseStats(name: string): Promise<CodebaseStats> {
+  async getKnowledgeBaseStats(name: string): Promise<KnowledgeBaseStats> {
     try {
-      logger.debug('Getting codebase statistics', { codebaseName: name });
+      logger.debug('Getting knowledge base statistics', { knowledgeBaseName: name });
 
       const table = await this.lanceClient.getOrCreateTable(name);
       if (!table) {
-        throw new CodebaseError(`Codebase '${name}' not found`);
+        throw new KnowledgeBaseError(`Knowledge base '${name}' not found`);
       }
       
       // Get all rows to calculate statistics
@@ -134,8 +133,7 @@ export class CodebaseService {
       
       const chunkCount = rows.length;
 
-      // Calculate language distribution
-      const languageMap = new Map<string, { fileCount: Set<string>; chunkCount: number }>();
+      // Calculate statistics
       const chunkTypeMap = new Map<string, number>();
       const fileSet = new Set<string>();
       let totalSize = 0;
@@ -143,7 +141,6 @@ export class CodebaseService {
       let lastIngestion = '';
 
       for (const row of rows) {
-        const language = row.language || 'unknown';
         const filePath = row.filePath || '';
         const chunkType = row.chunkType || 'unknown';
         const content = row.content || '';
@@ -157,27 +154,11 @@ export class CodebaseService {
         fileSet.add(filePath);
         totalSize += content.length;
 
-        // Track language stats
-        if (!languageMap.has(language)) {
-          languageMap.set(language, { fileCount: new Set(), chunkCount: 0 });
-        }
-        const langStats = languageMap.get(language)!;
-        langStats.fileCount.add(filePath);
-        langStats.chunkCount++;
-
         // Track chunk type stats
         chunkTypeMap.set(chunkType, (chunkTypeMap.get(chunkType) || 0) + 1);
       }
 
       // Convert to arrays
-      const languages: LanguageStats[] = Array.from(languageMap.entries()).map(
-        ([language, stats]) => ({
-          language,
-          fileCount: stats.fileCount.size,
-          chunkCount: stats.chunkCount,
-        })
-      );
-
       const chunkTypes: ChunkTypeStats[] = Array.from(chunkTypeMap.entries()).map(
         ([type, count]) => ({
           type,
@@ -185,19 +166,18 @@ export class CodebaseService {
         })
       );
 
-      const stats: CodebaseStats = {
+      const stats: KnowledgeBaseStats = {
         name,
         path,
         chunkCount,
         fileCount: fileSet.size,
         lastIngestion,
-        languages,
         chunkTypes,
         sizeBytes: totalSize,
       };
 
-      logger.debug('Codebase statistics retrieved successfully', {
-        codebaseName: name,
+      logger.debug('Knowledge base statistics retrieved successfully', {
+        knowledgeBaseName: name,
         chunkCount,
         fileCount: fileSet.size,
       });
@@ -206,41 +186,41 @@ export class CodebaseService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(
-        'Failed to get codebase statistics',
+        'Failed to get knowledge base statistics',
         error instanceof Error ? error : new Error(errorMessage),
-        { codebaseName: name }
+        { knowledgeBaseName: name }
       );
-      throw new CodebaseError(
-        `Failed to get statistics for codebase '${name}': ${errorMessage}`,
+      throw new KnowledgeBaseError(
+        `Failed to get statistics for knowledge base '${name}': ${errorMessage}`,
         error
       );
     }
   }
 
   /**
-   * Rename a codebase and propagate to all chunk metadata
+   * Rename a knowledge base and propagate to all chunk metadata
    */
-  async renameCodebase(oldName: string, newName: string): Promise<void> {
+  async renameKnowledgeBase(oldName: string, newName: string): Promise<void> {
     try {
-      logger.debug('Renaming codebase', { oldName, newName });
+      logger.debug('Renaming knowledge base', { oldName, newName });
 
       // Get the old table
       const oldTable = await this.lanceClient.getOrCreateTable(oldName);
       if (!oldTable) {
-        throw new CodebaseError(`Codebase '${oldName}' not found`);
+        throw new KnowledgeBaseError(`Knowledge base '${oldName}' not found`);
       }
       
       // Get all rows from old table
       const rows = await oldTable.query().toArray();
 
       if (rows.length === 0) {
-        logger.warn('No chunks found in codebase to rename', { oldName });
+        logger.warn('No chunks found in knowledge base to rename', { oldName });
       }
 
-      // Update codebaseName in all rows
+      // Update knowledgeBaseName in all rows
       const updatedRows = rows.map((row: any) => ({
         ...row,
-        _codebaseName: newName,
+        _knowledgeBaseName: newName,
         _renamedFrom: oldName,
         _renamedAt: new Date().toISOString(),
       }));
@@ -253,7 +233,7 @@ export class CodebaseService {
       // Delete old table
       await this.lanceClient.deleteTable(oldName);
 
-      logger.debug('Codebase renamed successfully', {
+      logger.debug('Knowledge base renamed successfully', {
         oldName,
         newName,
         chunksUpdated: rows.length,
@@ -261,36 +241,36 @@ export class CodebaseService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(
-        'Failed to rename codebase',
+        'Failed to rename knowledge base',
         error instanceof Error ? error : new Error(errorMessage),
         { oldName, newName }
       );
-      throw new CodebaseError(
-        `Failed to rename codebase from '${oldName}' to '${newName}': ${errorMessage}`,
+      throw new KnowledgeBaseError(
+        `Failed to rename knowledge base from '${oldName}' to '${newName}': ${errorMessage}`,
         error
       );
     }
   }
 
   /**
-   * Delete a codebase and all its chunks
+   * Delete a knowledge base and all its chunks
    */
-  async deleteCodebase(name: string): Promise<void> {
+  async deleteKnowledgeBase(name: string): Promise<void> {
     try {
-      logger.debug('Deleting codebase', { codebaseName: name });
+      logger.debug('Deleting knowledge base', { knowledgeBaseName: name });
 
       await this.lanceClient.deleteTable(name);
 
-      logger.debug('Codebase deleted successfully', { codebaseName: name });
+      logger.debug('Knowledge base deleted successfully', { knowledgeBaseName: name });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(
-        'Failed to delete codebase',
+        'Failed to delete knowledge base',
         error instanceof Error ? error : new Error(errorMessage),
-        { codebaseName: name }
+        { knowledgeBaseName: name }
       );
-      throw new CodebaseError(
-        `Failed to delete codebase '${name}': ${errorMessage}`,
+      throw new KnowledgeBaseError(
+        `Failed to delete knowledge base '${name}': ${errorMessage}`,
         error
       );
     }
@@ -299,13 +279,13 @@ export class CodebaseService {
   /**
    * Delete chunks from a specific ingestion timestamp
    */
-  async deleteChunkSet(codebaseName: string, timestamp: string): Promise<number> {
+  async deleteChunkSet(knowledgeBaseName: string, timestamp: string): Promise<number> {
     try {
-      logger.debug('Deleting chunk set', { codebaseName, timestamp });
+      logger.debug('Deleting chunk set', { knowledgeBaseName, timestamp });
 
-      const table = await this.lanceClient.getOrCreateTable(codebaseName);
+      const table = await this.lanceClient.getOrCreateTable(knowledgeBaseName);
       if (!table) {
-        throw new CodebaseError(`Codebase '${codebaseName}' not found`);
+        throw new KnowledgeBaseError(`Knowledge base '${knowledgeBaseName}' not found`);
       }
 
       // Count chunks with the specified timestamp
@@ -317,7 +297,7 @@ export class CodebaseService {
 
       if (chunkCount === 0) {
         logger.warn('No chunks found with specified timestamp', {
-          codebaseName,
+          knowledgeBaseName,
           timestamp,
         });
         return 0;
@@ -327,7 +307,7 @@ export class CodebaseService {
       await table.delete(`ingestionTimestamp = '${timestamp}'`);
 
       logger.debug('Chunk set deleted successfully', {
-        codebaseName,
+        knowledgeBaseName,
         timestamp,
         chunksDeleted: chunkCount,
       });
@@ -338,10 +318,10 @@ export class CodebaseService {
       logger.error(
         'Failed to delete chunk set',
         error instanceof Error ? error : new Error(errorMessage),
-        { codebaseName, timestamp }
+        { knowledgeBaseName, timestamp }
       );
-      throw new CodebaseError(
-        `Failed to delete chunk set for codebase '${codebaseName}' at timestamp '${timestamp}': ${errorMessage}`,
+      throw new KnowledgeBaseError(
+        `Failed to delete chunk set for knowledge base '${knowledgeBaseName}' at timestamp '${timestamp}': ${errorMessage}`,
         error
       );
     }

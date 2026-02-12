@@ -5,17 +5,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
 import { registerRoutes } from '../routes.js';
-import type { CodebaseService } from '../../../domains/codebase/codebase.service.js';
+import type { KnowledgeBaseService } from '../../../domains/knowledgebase/codebase.service.js';
 import type { SearchService } from '../../../domains/search/search.service.js';
 import type {
-  CodebaseMetadata,
-  CodebaseStats,
+  KnowledgeBaseMetadata,
+  KnowledgeBaseStats,
   SearchResults,
 } from '../../../shared/types/index.js';
 
 describe('Fastify API Routes', () => {
   let fastify: FastifyInstance;
-  let mockCodebaseService: CodebaseService;
+  let mockKnowledgeBaseService: KnowledgeBaseService;
   let mockSearchService: SearchService;
 
   beforeEach(async () => {
@@ -23,11 +23,11 @@ describe('Fastify API Routes', () => {
     fastify = Fastify({ logger: false });
 
     // Create mock services
-    mockCodebaseService = {
-      listCodebases: vi.fn(),
-      getCodebaseStats: vi.fn(),
-      renameCodebase: vi.fn(),
-      deleteCodebase: vi.fn(),
+    mockKnowledgeBaseService = {
+      listKnowledgeBases: vi.fn(),
+      getKnowledgeBaseStats: vi.fn(),
+      renameKnowledgeBase: vi.fn(),
+      deleteKnowledgeBase: vi.fn(),
       deleteChunkSet: vi.fn(),
     } as any;
 
@@ -36,15 +36,15 @@ describe('Fastify API Routes', () => {
     } as any;
 
     // Register routes
-    await registerRoutes(fastify, mockCodebaseService, mockSearchService);
+    await registerRoutes(fastify, mockKnowledgeBaseService, mockSearchService);
   });
 
   describe('GET /api/codebases', () => {
-    it('should return list of codebases', async () => {
-      const mockCodebases: CodebaseMetadata[] = [
+    it('should return list of knowledge bases', async () => {
+      const mockKnowledgeBases: KnowledgeBaseMetadata[] = [
         {
-          name: 'test-codebase',
-          path: '/path/to/codebase',
+          name: 'test-knowledgebase',
+          path: '/path/to/knowledgebase',
           chunkCount: 100,
           fileCount: 10,
           lastIngestion: '2024-01-01T00:00:00Z',
@@ -52,7 +52,7 @@ describe('Fastify API Routes', () => {
         },
       ];
 
-      vi.mocked(mockCodebaseService.listCodebases).mockResolvedValue(mockCodebases);
+      vi.mocked(mockKnowledgeBaseService.listKnowledgeBases).mockResolvedValue(mockKnowledgeBases);
 
       const response = await fastify.inject({
         method: 'GET',
@@ -61,12 +61,12 @@ describe('Fastify API Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.codebases).toEqual(mockCodebases);
-      expect(mockCodebaseService.listCodebases).toHaveBeenCalledOnce();
+      expect(body.codebases).toEqual(mockKnowledgeBases);
+      expect(mockKnowledgeBaseService.listKnowledgeBases).toHaveBeenCalledOnce();
     });
 
     it('should return 500 on service error', async () => {
-      vi.mocked(mockCodebaseService.listCodebases).mockRejectedValue(
+      vi.mocked(mockKnowledgeBaseService.listKnowledgeBases).mockRejectedValue(
         new Error('Database error')
       );
 
@@ -94,7 +94,7 @@ describe('Fastify API Routes', () => {
             chunkType: 'function',
             content: 'function test() {}',
             similarityScore: 0.95,
-            codebaseName: 'test-codebase',
+            knowledgeBaseName: 'test-knowledgebase',
           },
         ],
         totalResults: 1,
@@ -133,7 +133,7 @@ describe('Fastify API Routes', () => {
         url: '/api/search',
         payload: {
           query: 'test',
-          codebaseName: 'my-codebase',
+          knowledgeBaseName: 'my-knowledgebase',
           language: 'typescript',
           maxResults: 10,
         },
@@ -142,7 +142,7 @@ describe('Fastify API Routes', () => {
       expect(response.statusCode).toBe(200);
       expect(mockSearchService.search).toHaveBeenCalledWith({
         query: 'test',
-        codebaseName: 'my-codebase',
+        knowledgeBaseName: 'my-knowledgebase',
         language: 'typescript',
         maxResults: 10,
       });
@@ -210,10 +210,10 @@ describe('Fastify API Routes', () => {
   });
 
   describe('GET /api/codebases/:name/stats', () => {
-    it('should return codebase statistics', async () => {
-      const mockStats: CodebaseStats = {
-        name: 'test-codebase',
-        path: '/path/to/codebase',
+    it('should return knowledge base statistics', async () => {
+      const mockStats: KnowledgeBaseStats = {
+        name: 'test-knowledgebase',
+        path: '/path/to/knowledgebase',
         chunkCount: 100,
         fileCount: 10,
         lastIngestion: '2024-01-01T00:00:00Z',
@@ -228,22 +228,22 @@ describe('Fastify API Routes', () => {
         sizeBytes: 50000,
       };
 
-      vi.mocked(mockCodebaseService.getCodebaseStats).mockResolvedValue(mockStats);
+      vi.mocked(mockKnowledgeBaseService.getKnowledgeBaseStats).mockResolvedValue(mockStats);
 
       const response = await fastify.inject({
         method: 'GET',
-        url: '/api/codebases/test-codebase/stats',
+        url: '/api/codebases/test-knowledgebase/stats',
       });
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body).toEqual(mockStats);
-      expect(mockCodebaseService.getCodebaseStats).toHaveBeenCalledWith('test-codebase');
+      expect(mockKnowledgeBaseService.getKnowledgeBaseStats).toHaveBeenCalledWith('test-knowledgebase');
     });
 
-    it('should return 404 for non-existent codebase', async () => {
-      vi.mocked(mockCodebaseService.getCodebaseStats).mockRejectedValue(
-        new Error('Codebase not found')
+    it('should return 404 for non-existent knowledge base', async () => {
+      vi.mocked(mockKnowledgeBaseService.getKnowledgeBaseStats).mockRejectedValue(
+        new Error('Knowledge base not found')
       );
 
       const response = await fastify.inject({
@@ -257,13 +257,13 @@ describe('Fastify API Routes', () => {
     });
 
     it('should return 500 on service error', async () => {
-      vi.mocked(mockCodebaseService.getCodebaseStats).mockRejectedValue(
+      vi.mocked(mockKnowledgeBaseService.getKnowledgeBaseStats).mockRejectedValue(
         new Error('Database error')
       );
 
       const response = await fastify.inject({
         method: 'GET',
-        url: '/api/codebases/test-codebase/stats',
+        url: '/api/codebases/test-knowledgebase/stats',
       });
 
       expect(response.statusCode).toBe(500);
@@ -273,8 +273,8 @@ describe('Fastify API Routes', () => {
   });
 
   describe('PUT /api/codebases/:name', () => {
-    it('should rename codebase successfully', async () => {
-      vi.mocked(mockCodebaseService.renameCodebase).mockResolvedValue(undefined);
+    it('should rename knowledge base successfully', async () => {
+      vi.mocked(mockKnowledgeBaseService.renameKnowledgeBase).mockResolvedValue(undefined);
 
       const response = await fastify.inject({
         method: 'PUT',
@@ -289,7 +289,7 @@ describe('Fastify API Routes', () => {
       expect(body.success).toBe(true);
       expect(body.message).toContain('old-name');
       expect(body.message).toContain('new-name');
-      expect(mockCodebaseService.renameCodebase).toHaveBeenCalledWith(
+      expect(mockKnowledgeBaseService.renameKnowledgeBase).toHaveBeenCalledWith(
         'old-name',
         'new-name'
       );
@@ -307,9 +307,9 @@ describe('Fastify API Routes', () => {
       expect(body.error.code).toBe('VALIDATION_ERROR');
     });
 
-    it('should return 404 for non-existent codebase', async () => {
-      vi.mocked(mockCodebaseService.renameCodebase).mockRejectedValue(
-        new Error('Codebase not found')
+    it('should return 404 for non-existent knowledge base', async () => {
+      vi.mocked(mockKnowledgeBaseService.renameKnowledgeBase).mockRejectedValue(
+        new Error('Knowledge base not found')
       );
 
       const response = await fastify.inject({
@@ -326,7 +326,7 @@ describe('Fastify API Routes', () => {
     });
 
     it('should return 500 on service error', async () => {
-      vi.mocked(mockCodebaseService.renameCodebase).mockRejectedValue(
+      vi.mocked(mockKnowledgeBaseService.renameKnowledgeBase).mockRejectedValue(
         new Error('Database error')
       );
 
@@ -345,24 +345,24 @@ describe('Fastify API Routes', () => {
   });
 
   describe('DELETE /api/codebases/:name', () => {
-    it('should delete codebase successfully', async () => {
-      vi.mocked(mockCodebaseService.deleteCodebase).mockResolvedValue(undefined);
+    it('should delete knowledge base successfully', async () => {
+      vi.mocked(mockKnowledgeBaseService.deleteKnowledgeBase).mockResolvedValue(undefined);
 
       const response = await fastify.inject({
         method: 'DELETE',
-        url: '/api/codebases/test-codebase',
+        url: '/api/codebases/test-knowledgebase',
       });
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.message).toContain('test-codebase');
-      expect(mockCodebaseService.deleteCodebase).toHaveBeenCalledWith('test-codebase');
+      expect(body.message).toContain('test-knowledgebase');
+      expect(mockKnowledgeBaseService.deleteKnowledgeBase).toHaveBeenCalledWith('test-knowledgebase');
     });
 
-    it('should return 404 for non-existent codebase', async () => {
-      vi.mocked(mockCodebaseService.deleteCodebase).mockRejectedValue(
-        new Error('Codebase not found')
+    it('should return 404 for non-existent knowledge base', async () => {
+      vi.mocked(mockKnowledgeBaseService.deleteKnowledgeBase).mockRejectedValue(
+        new Error('Knowledge base not found')
       );
 
       const response = await fastify.inject({
@@ -376,13 +376,13 @@ describe('Fastify API Routes', () => {
     });
 
     it('should return 500 on service error', async () => {
-      vi.mocked(mockCodebaseService.deleteCodebase).mockRejectedValue(
+      vi.mocked(mockKnowledgeBaseService.deleteKnowledgeBase).mockRejectedValue(
         new Error('Database error')
       );
 
       const response = await fastify.inject({
         method: 'DELETE',
-        url: '/api/codebases/test-codebase',
+        url: '/api/codebases/test-knowledgebase',
       });
 
       expect(response.statusCode).toBe(500);
@@ -393,11 +393,11 @@ describe('Fastify API Routes', () => {
 
   describe('DELETE /api/codebases/:name/chunk-sets/:timestamp', () => {
     it('should delete chunk set successfully', async () => {
-      vi.mocked(mockCodebaseService.deleteChunkSet).mockResolvedValue(50);
+      vi.mocked(mockKnowledgeBaseService.deleteChunkSet).mockResolvedValue(50);
 
       const response = await fastify.inject({
         method: 'DELETE',
-        url: '/api/codebases/test-codebase/chunk-sets/2024-01-01T00:00:00Z',
+        url: '/api/codebases/test-knowledgebase/chunk-sets/2024-01-01T00:00:00Z',
       });
 
       expect(response.statusCode).toBe(200);
@@ -405,15 +405,15 @@ describe('Fastify API Routes', () => {
       expect(body.success).toBe(true);
       expect(body.chunksDeleted).toBe(50);
       expect(body.message).toContain('50');
-      expect(mockCodebaseService.deleteChunkSet).toHaveBeenCalledWith(
-        'test-codebase',
+      expect(mockKnowledgeBaseService.deleteChunkSet).toHaveBeenCalledWith(
+        'test-knowledgebase',
         '2024-01-01T00:00:00Z'
       );
     });
 
-    it('should return 404 for non-existent codebase', async () => {
-      vi.mocked(mockCodebaseService.deleteChunkSet).mockRejectedValue(
-        new Error('Codebase not found')
+    it('should return 404 for non-existent knowledge base', async () => {
+      vi.mocked(mockKnowledgeBaseService.deleteChunkSet).mockRejectedValue(
+        new Error('Knowledge base not found')
       );
 
       const response = await fastify.inject({
@@ -427,13 +427,13 @@ describe('Fastify API Routes', () => {
     });
 
     it('should return 500 on service error', async () => {
-      vi.mocked(mockCodebaseService.deleteChunkSet).mockRejectedValue(
+      vi.mocked(mockKnowledgeBaseService.deleteChunkSet).mockRejectedValue(
         new Error('Database error')
       );
 
       const response = await fastify.inject({
         method: 'DELETE',
-        url: '/api/codebases/test-codebase/chunk-sets/2024-01-01T00:00:00Z',
+        url: '/api/codebases/test-knowledgebase/chunk-sets/2024-01-01T00:00:00Z',
       });
 
       expect(response.statusCode).toBe(500);
