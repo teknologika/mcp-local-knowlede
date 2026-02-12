@@ -16,6 +16,8 @@
 import type { Config, IngestionParams, IngestionStats, Chunk } from '../../shared/types/index.js';
 import { FileScannerService, type ScannedFile } from './file-scanner.service.js';
 import type { EmbeddingService } from '../embedding/embedding.service.js';
+import { DocumentConverterService } from '../document/document-converter.service.js';
+import { DocumentChunkerService } from '../document/document-chunker.service.js';
 import { LanceDBClientWrapper } from '../../infrastructure/lancedb/lancedb.client.js';
 import { createLogger, startTimer, logMemoryUsage } from '../../shared/logging/index.js';
 import type { Logger } from '../../shared/logging/logger.js';
@@ -44,6 +46,8 @@ export type ProgressCallback = (phase: string, current: number, total: number) =
 export class IngestionService {
   private fileScanner: FileScannerService;
   private embeddingService: EmbeddingService;
+  private documentConverter: DocumentConverterService;
+  private documentChunker: DocumentChunkerService;
   private lanceClient: LanceDBClientWrapper;
   private config: Config;
   private logger: Logger;
@@ -55,6 +59,13 @@ export class IngestionService {
   ) {
     this.fileScanner = new FileScannerService();
     this.embeddingService = embeddingService;
+    this.documentConverter = new DocumentConverterService({
+      outputDir: './temp',
+      conversionTimeout: config.document?.conversionTimeout || 30000,
+    });
+    this.documentChunker = new DocumentChunkerService({
+      outputDir: './temp',
+    });
     this.lanceClient = lanceClient;
     this.config = config;
     this.logger = rootLogger.child('IngestionService');
@@ -115,28 +126,100 @@ export class IngestionService {
       // Log warnings for unsupported files
       this.logUnsupportedFiles(unsupportedFiles);
 
-      // Phase 2: Parse files and extract chunks
-      this.logger.info('Phase 2: Parsing files and extracting chunks', {
+      // Phase 2: Convert and chunk documents
+      this.logger.info('Phase 2: Converting and chunking documents', {
         fileCount: supportedFiles.length,
       });
 
-      const parseTimer = startTimer('parseAllFiles', this.logger, {
+      const parseTimer = startTimer('processAllDocuments', this.logger, {
         fileCount: supportedFiles.length,
       });
 
-      // TODO: Phase 2 will be replaced with document conversion and chunking
-      // For now, we skip document processing since it hasn't been implemented yet
       const allChunks: Chunk[] = [];
+      let processedFiles = 0;
+      const errors: Array<{ filePath: string; error: string }> = [];
 
-      this.logger.warn('Document processing phase temporarily disabled', {
-        supportedFiles: supportedFiles.length,
-      });
+      // Process files in batches
+      const batchSize = this.config.ingestion.batchSize;
+      for (let i = 0; i < supportedFiles.length; i += batchSize) {
+        const batch = supportedFiles.slice(i, i + batchSize);
+
+        for (const file of batch) {
+          try {
+            // Convert document to markdown
+            const conversionResult = await this.documentConverter.convertDocument(file.path);
+
+            // Chunk the document
+            let documentChunks;
+            if (conversionResult.doclingDocument) {
+              // Use Docling document object for better chunking
+              documentChunks = await this.documentChunker.chunkWithDocling(
+                conversionResult.doclingDocument,
+                {
+                  maxTokens: this.config.document?.maxTokens || 512,
+                  chunkSize: this.config.document?.chunkSize || 1000,
+                  chunkOverlap: this.config.document?.chunkOverlap || 200,
+                }
+              );
+            } else {
+              // Fallback to markdown chunking
+              documentChunks = await this.documentChunker.chunkDocument(
+                conversionResult.markdown,
+                {
+                  maxTokens: this.config.document?.maxTokens || 512,
+                  chunkSize: this.config.document?.chunkSize || 1000,
+                  chunkOverlap: this.config.document?.chunkOverlap || 200,
+                }
+              );
+            }
+
+            // Transform to Chunk format
+            for (const docChunk of documentChunks) {
+              allChunks.push({
+                content: docChunk.content,
+                filePath: file.relativePath,
+                startLine: 0,
+                endLine: 0,
+                chunkType: docChunk.metadata.chunkType,
+                isTestFile: file.isTest,
+                documentType: file.documentType,
+                tokenCount: docChunk.tokenCount,
+                headingPath: docChunk.metadata.headingPath,
+                pageNumber: docChunk.metadata.pageNumber,
+              });
+            }
+
+            processedFiles++;
+            progressCallback?.('Processing documents', processedFiles, supportedFiles.length);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(
+              'Failed to process document',
+              error instanceof Error ? error : new Error(errorMessage),
+              { filePath: file.relativePath }
+            );
+            errors.push({
+              filePath: file.relativePath,
+              error: errorMessage,
+            });
+          }
+        }
+      }
 
       parseTimer.end();
 
-      this.logger.info('Document processing phase skipped (not yet implemented)', {
+      this.logger.info('Document processing completed', {
         totalChunks: allChunks.length,
+        processedFiles,
+        errors: errors.length,
       });
+
+      if (errors.length > 0) {
+        this.logger.warn('Some documents failed to process', {
+          errorCount: errors.length,
+          errors: errors.slice(0, 10), // Log first 10 errors
+        });
+      }
 
       // Log memory after parsing
       logMemoryUsage(this.logger, { phase: 'afterParsing', codebaseName, chunkCount: allChunks.length });
@@ -353,8 +436,12 @@ export class IngestionService {
         filePath: chunk.filePath || '',
         startLine: chunk.startLine || 0,
         endLine: chunk.endLine || 0,
-        chunkType: chunk.chunkType || 'unknown',
+        chunkType: chunk.chunkType || 'paragraph',
+        documentType: chunk.documentType || 'text',
+        tokenCount: chunk.tokenCount || 0,
         isTestFile: chunk.isTestFile || false,
+        headingPath: chunk.headingPath || [],
+        pageNumber: chunk.pageNumber,
         ingestionTimestamp,
         _knowledgeBaseName: codebaseName,
         _path: codebasePath,

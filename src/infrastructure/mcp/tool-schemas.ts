@@ -8,14 +8,14 @@
  */
 
 /**
- * Schema for list_codebases tool
+ * Schema for list_knowledgebases tool
  * 
- * Lists all indexed codebases with their metadata.
+ * Lists all indexed knowledge bases with their metadata.
  * No input parameters required.
  */
-export const LIST_CODEBASES_SCHEMA = {
-  name: 'list_codebases',
-  description: 'List all indexed codebases with their metadata including name, path, chunk count, file count, last ingestion timestamp, and supported languages.',
+export const LIST_KNOWLEDGEBASES_SCHEMA = {
+  name: 'list_knowledgebases',
+  description: 'List all indexed knowledge bases with their metadata including name, path, chunk count, file count, last ingestion timestamp, and document types.',
   inputSchema: {
     type: 'object',
     properties: {},
@@ -24,23 +24,23 @@ export const LIST_CODEBASES_SCHEMA = {
   outputSchema: {
     type: 'object',
     properties: {
-      codebases: {
+      knowledgebases: {
         type: 'array',
-        description: 'Array of all indexed codebases',
+        description: 'Array of all indexed knowledge bases',
         items: {
           type: 'object',
           properties: {
             name: {
               type: 'string',
-              description: 'Unique name of the codebase',
+              description: 'Unique name of the knowledge base',
             },
             path: {
               type: 'string',
-              description: 'File system path to the codebase directory',
+              description: 'File system path to the knowledge base directory',
             },
             chunkCount: {
               type: 'number',
-              description: 'Total number of code chunks indexed',
+              description: 'Total number of document chunks indexed',
               minimum: 0,
             },
             fileCount: {
@@ -59,31 +59,31 @@ export const LIST_CODEBASES_SCHEMA = {
         },
       },
     },
-    required: ['codebases'],
+    required: ['knowledgebases'],
     additionalProperties: false,
   },
 } as const;
 
 /**
- * Schema for search_codebases tool
+ * Schema for search_knowledgebases tool
  * 
- * Performs semantic search across indexed codebases.
- * Accepts a query string and optional filters for codebase name, language, and max results.
+ * Performs semantic search across indexed knowledge bases.
+ * Accepts a query string and optional filters for knowledge base name, document type, and max results.
  */
-export const SEARCH_CODEBASES_SCHEMA = {
-  name: 'search_codebases',
-  description: 'Search indexed codebases using semantic search. Returns code chunks ranked by similarity to the query. Supports optional filters for codebase name, language, and maximum number of results.',
+export const SEARCH_KNOWLEDGEBASES_SCHEMA = {
+  name: 'search_knowledgebases',
+  description: 'Search indexed knowledge bases using semantic search. Returns document chunks ranked by similarity to the query. Supports optional filters for knowledge base name, document type, and maximum number of results.',
   inputSchema: {
     type: 'object',
     properties: {
       query: {
         type: 'string',
-        description: 'Search query describing the code you want to find (e.g., "authentication function", "database connection class")',
+        description: 'Search query describing the content you want to find (e.g., "project requirements", "meeting notes about Q4")',
         minLength: 1,
       },
-      codebaseName: {
+      knowledgebaseName: {
         type: 'string',
-        description: 'Optional filter to search only within a specific codebase',
+        description: 'Optional filter to search only within a specific knowledge base',
       },
       documentType: {
         type: 'string',
@@ -112,16 +112,16 @@ export const SEARCH_CODEBASES_SCHEMA = {
           properties: {
             filePath: {
               type: 'string',
-              description: 'Relative path to the file containing this code chunk',
+              description: 'Relative path to the file containing this document chunk',
             },
             startLine: {
               type: 'number',
-              description: 'Starting line number of the code chunk (1-indexed)',
+              description: 'Starting line number of the chunk (1-indexed)',
               minimum: 1,
             },
             endLine: {
               type: 'number',
-              description: 'Ending line number of the code chunk (1-indexed)',
+              description: 'Ending line number of the chunk (1-indexed)',
               minimum: 1,
             },
             documentType: {
@@ -131,11 +131,11 @@ export const SEARCH_CODEBASES_SCHEMA = {
             },
             chunkType: {
               type: 'string',
-              description: 'Type of code construct',
+              description: 'Type of document chunk (paragraph, section, table, heading, list, code)',
             },
             content: {
               type: 'string',
-              description: 'The actual code content of the chunk',
+              description: 'The actual content of the chunk',
             },
             similarityScore: {
               type: 'number',
@@ -143,9 +143,9 @@ export const SEARCH_CODEBASES_SCHEMA = {
               minimum: 0,
               maximum: 1,
             },
-            codebaseName: {
+            knowledgebaseName: {
               type: 'string',
-              description: 'Name of the codebase containing this chunk',
+              description: 'Name of the knowledge base containing this chunk',
             },
           },
           required: [
@@ -156,7 +156,7 @@ export const SEARCH_CODEBASES_SCHEMA = {
             'chunkType',
             'content',
             'similarityScore',
-            'codebaseName',
+            'knowledgebaseName',
           ],
           additionalProperties: false,
         },
@@ -178,20 +178,20 @@ export const SEARCH_CODEBASES_SCHEMA = {
 } as const;
 
 /**
- * Schema for get_codebase_stats tool
+ * Schema for get_knowledgebase_stats tool
  * 
- * Retrieves detailed statistics for a specific codebase.
- * Requires the codebase name as input.
+ * Retrieves detailed statistics for a specific knowledge base.
+ * Requires the knowledge base name as input.
  */
-export const GET_CODEBASE_STATS_SCHEMA = {
-  name: 'get_codebase_stats',
-  description: 'Get detailed statistics for a specific codebase including chunk count, file count, language distribution, chunk type distribution, and storage size.',
+export const GET_KNOWLEDGEBASE_STATS_SCHEMA = {
+  name: 'get_knowledgebase_stats',
+  description: 'Get detailed statistics for a specific knowledge base including chunk count, file count, document type distribution, chunk type distribution, and storage size.',
   inputSchema: {
     type: 'object',
     properties: {
       name: {
         type: 'string',
-        description: 'Name of the codebase to retrieve statistics for',
+        description: 'Name of the knowledge base to retrieve statistics for',
         minLength: 1,
       },
     },
@@ -203,15 +203,15 @@ export const GET_CODEBASE_STATS_SCHEMA = {
     properties: {
       name: {
         type: 'string',
-        description: 'Name of the codebase',
+        description: 'Name of the knowledge base',
       },
       path: {
         type: 'string',
-        description: 'File system path to the codebase directory',
+        description: 'File system path to the knowledge base directory',
       },
       chunkCount: {
         type: 'number',
-        description: 'Total number of code chunks indexed',
+        description: 'Total number of document chunks indexed',
         minimum: 0,
       },
       fileCount: {
@@ -257,7 +257,7 @@ export const GET_CODEBASE_STATS_SCHEMA = {
           properties: {
             type: {
               type: 'string',
-              description: 'Type of code construct',
+              description: 'Type of document chunk',
             },
             count: {
               type: 'number',
@@ -271,7 +271,7 @@ export const GET_CODEBASE_STATS_SCHEMA = {
       },
       sizeBytes: {
         type: 'number',
-        description: 'Total size of all code chunks in bytes',
+        description: 'Total size of all document chunks in bytes',
         minimum: 0,
       },
     },
@@ -281,14 +281,14 @@ export const GET_CODEBASE_STATS_SCHEMA = {
 } as const;
 
 /**
- * Schema for open_codebase_manager tool
+ * Schema for open_knowledgebase_manager tool
  * 
- * Opens the web-based codebase manager UI in the default browser.
+ * Opens the web-based knowledge base manager UI in the default browser.
  * No input parameters required.
  */
-export const OPEN_CODEBASE_MANAGER_SCHEMA = {
-  name: 'open_codebase_manager',
-  description: 'Open the web-based codebase manager UI in the default browser. The manager provides a visual interface for viewing codebase statistics, renaming codebases, and deleting codebases.',
+export const OPEN_KNOWLEDGEBASE_MANAGER_SCHEMA = {
+  name: 'open_knowledgebase_manager',
+  description: 'Open the web-based knowledge base manager UI in the default browser. The manager provides a visual interface for viewing knowledge base statistics, renaming knowledge bases, and deleting knowledge bases.',
   inputSchema: {
     type: 'object',
     properties: {},
@@ -316,22 +316,22 @@ export const OPEN_CODEBASE_MANAGER_SCHEMA = {
  * All tool schemas exported as an array for easy registration
  */
 export const ALL_TOOL_SCHEMAS = [
-  LIST_CODEBASES_SCHEMA,
-  SEARCH_CODEBASES_SCHEMA,
-  GET_CODEBASE_STATS_SCHEMA,
-  OPEN_CODEBASE_MANAGER_SCHEMA,
+  LIST_KNOWLEDGEBASES_SCHEMA,
+  SEARCH_KNOWLEDGEBASES_SCHEMA,
+  GET_KNOWLEDGEBASE_STATS_SCHEMA,
+  OPEN_KNOWLEDGEBASE_MANAGER_SCHEMA,
 ] as const;
 
 /**
  * Type definitions for tool inputs and outputs
  */
 
-export interface ListCodebasesInput {
+export interface ListKnowledgebasesInput {
   // No parameters
 }
 
-export interface ListCodebasesOutput {
-  codebases: Array<{
+export interface ListKnowledgebasesOutput {
+  knowledgebases: Array<{
     name: string;
     path: string;
     chunkCount: number;
@@ -340,14 +340,14 @@ export interface ListCodebasesOutput {
   }>;
 }
 
-export interface SearchCodebasesInput {
+export interface SearchKnowledgebasesInput {
   query: string;
-  codebaseName?: string;
+  knowledgebaseName?: string;
   documentType?: 'pdf' | 'docx' | 'pptx' | 'xlsx' | 'html' | 'markdown' | 'text' | 'audio';
   maxResults?: number;
 }
 
-export interface SearchCodebasesOutput {
+export interface SearchKnowledgebasesOutput {
   results: Array<{
     filePath: string;
     startLine: number;
@@ -356,17 +356,17 @@ export interface SearchCodebasesOutput {
     chunkType: string;
     content: string;
     similarityScore: number;
-    codebaseName: string;
+    knowledgebaseName: string;
   }>;
   totalResults: number;
   queryTime: number;
 }
 
-export interface GetCodebaseStatsInput {
+export interface GetKnowledgebaseStatsInput {
   name: string;
 }
 
-export interface GetCodebaseStatsOutput {
+export interface GetKnowledgebaseStatsOutput {
   name: string;
   path: string;
   chunkCount: number;
@@ -384,11 +384,11 @@ export interface GetCodebaseStatsOutput {
   sizeBytes: number;
 }
 
-export interface OpenCodebaseManagerInput {
+export interface OpenKnowledgebaseManagerInput {
   // No parameters
 }
 
-export interface OpenCodebaseManagerOutput {
+export interface OpenKnowledgebaseManagerOutput {
   url: string;
   message: string;
 }

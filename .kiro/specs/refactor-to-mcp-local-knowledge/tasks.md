@@ -60,34 +60,34 @@
 ## Phase 3: Document Processing Services
 
 ### 3.1 Create Document Domain Structure
-- [ ] 3.1.1 Create src/domains/document/ directory
-- [ ] 3.1.2 Create document.types.ts with DocumentConversionResult interface
-- [ ] 3.1.3 Add DocumentMetadata interface
-- [ ] 3.1.4 Add DocumentChunk interface
-- [ ] 3.1.5 Create index.ts barrel file
+- [x] 3.1.1 Create src/domains/document/ directory
+- [x] 3.1.2 Create document.types.ts with DocumentConversionResult interface
+- [x] 3.1.3 Add DocumentMetadata interface
+- [x] 3.1.4 Add DocumentChunk interface
+- [x] 3.1.5 Create index.ts barrel file
 
 ### 3.2 Implement Document Converter Service
-- [ ] 3.2.1 Create document-converter.service.ts
-- [ ] 3.2.2 Initialize Docling client from docling-sdk in CLI mode
-- [ ] 3.2.3 Implement document type detection by extension
-- [ ] 3.2.4 Implement convertDocument() using docling-sdk client.convert()
-- [ ] 3.2.5 Support all document formats (PDF, DOCX, PPTX, XLSX, HTML, MD, TXT)
-- [ ] 3.2.6 Add audio file support (MP3, WAV, M4A, FLAC)
-- [ ] 3.2.7 Extract and normalize metadata from Docling result
-- [ ] 3.2.8 Add timeout handling (30s default)
-- [ ] 3.2.9 Implement fallback to simple text extraction on conversion failure
-- [ ] 3.2.10 Add progress reporting for long conversions
-- [ ] 3.2.11 Handle conversion errors with descriptive messages
+- [x] 3.2.1 Create document-converter.service.ts
+- [x] 3.2.2 Initialize Docling client from docling-sdk in CLI mode
+- [x] 3.2.3 Implement document type detection by extension
+- [x] 3.2.4 Implement convertDocument() using docling-sdk client.convert()
+- [x] 3.2.5 Support all document formats (PDF, DOCX, PPTX, XLSX, HTML, MD, TXT)
+- [x] 3.2.6 Add audio file support (MP3, WAV, M4A, FLAC)
+- [x] 3.2.7 Extract and normalize metadata from Docling result
+- [x] 3.2.8 Add timeout handling (30s default)
+- [x] 3.2.9 Implement fallback to simple text extraction on conversion failure
+- [x] 3.2.10 Add progress reporting for long conversions
+- [x] 3.2.11 Handle conversion errors with descriptive messages
 
 ### 3.3 Implement Document Chunker Service
-- [ ] 3.3.1 Create document-chunker.service.ts
-- [ ] 3.3.2 Initialize Docling client from docling-sdk
-- [ ] 3.3.3 Implement chunkDocument() using docling-sdk client.chunk()
-- [ ] 3.3.4 Configure HybridChunker: max_tokens=512, chunker_type='hybrid'
-- [ ] 3.3.5 Extract chunk metadata (type, token count, heading path)
-- [ ] 3.3.6 Implement fallback to simple text chunking (chunk_size=1000, overlap=200)
-- [ ] 3.3.7 Add contextualization (heading hierarchy) from Docling metadata
-- [ ] 3.3.8 Handle chunking errors gracefully with fallback
+- [x] 3.3.1 Create document-chunker.service.ts
+- [x] 3.3.2 Initialize Docling client from docling-sdk
+- [x] 3.3.3 Implement chunkDocument() using docling-sdk client.chunk()
+- [x] 3.3.4 Configure HybridChunker: max_tokens=512, chunker_type='hybrid'
+- [x] 3.3.5 Extract chunk metadata (type, token count, heading path)
+- [x] 3.3.6 Implement fallback to simple text chunking (chunk_size=1000, overlap=200)
+- [x] 3.3.7 Add contextualization (heading hierarchy) from Docling metadata
+- [x] 3.3.8 Handle chunking errors gracefully with fallback
 
 ### 3.4 Add Document Service Tests
 - [ ] 3.4.1 Test document type detection
@@ -108,30 +108,30 @@
 ## Phase 4: Update Ingestion Pipeline
 
 ### 4.1 Update File Scanner
-- [ ] 4.1.1 Update src/domains/ingestion/file-scanner.service.ts with document patterns
-- [ ] 4.1.2 Remove code file patterns
-- [ ] 4.1.3 Add DOCUMENT_EXTENSIONS constant (.pdf, .docx, .pptx, .xlsx, .html, .md, .txt, .mp3, .wav, .m4a, .flac)
-- [ ] 4.1.4 Update file classification for documents
-- [ ] 4.1.5 Add document type detection by extension
+- [x] 4.1.1 Update src/domains/ingestion/file-scanner.service.ts with document patterns
+- [x] 4.1.2 Remove code file patterns
+- [x] 4.1.3 Add DOCUMENT_EXTENSIONS constant (.pdf, .docx, .pptx, .xlsx, .html, .md, .txt, .mp3, .wav, .m4a, .flac)
+- [x] 4.1.4 Update file classification for documents
+- [x] 4.1.5 Add document type detection by extension
 
 ### 4.2 Update Ingestion Service
-- [ ] 4.2.1 Remove tree-sitter parsing logic from ingestion.service.ts
-- [ ] 4.2.2 Add DocumentConverterService integration
-- [ ] 4.2.3 Add DocumentChunkerService integration
-- [ ] 4.2.4 Update progress reporting for documents
-- [ ] 4.2.5 Add document type to chunk metadata
-- [ ] 4.2.6 Use fallback chunking if HybridChunker fails
+- [x] 4.2.1 Remove tree-sitter parsing logic from ingestion.service.ts
+- [x] 4.2.2 Add DocumentConverterService integration
+- [x] 4.2.3 Add DocumentChunkerService integration
+- [x] 4.2.4 Update progress reporting for documents
+- [x] 4.2.5 Add document type to chunk metadata
+- [x] 4.2.6 Use fallback chunking if HybridChunker fails
+- [x] 4.2.7 Update batch processing for documents
 - [ ] 4.2.7 Update batch processing for documents
-- [ ] 4.2.7 Update batch processing for documents
-- [ ] 4.2.8 Add conversion timeout handling
-- [ ] 4.2.9 Add retry logic for conversions (not chunking)
+- [x] 4.2.8 Add conversion timeout handling
+- [x] 4.2.9 Add retry logic for conversions (not chunking)
 
 ### 4.3 Update File Classification
-- [ ] 4.3.1 Update src/shared/utils/file-classification.ts for documents
-- [ ] 4.3.2 Remove code-specific classification
-- [ ] 4.3.3 Add document type classification
-- [ ] 4.3.4 Keep test file detection for markdown
-- [ ] 4.3.5 Remove library file detection
+- [x] 4.3.1 Update src/shared/utils/file-classification.ts for documents
+- [x] 4.3.2 Remove code-specific classification
+- [x] 4.3.3 Add document type classification
+- [x] 4.3.4 Keep test file detection for markdown
+- [x] 4.3.5 Remove library file detection
 
 ### 4.4 Update Ingestion Tests
 - [ ] 4.4.1 Test document file scanning
@@ -144,16 +144,16 @@
 ## Phase 5: Update MCP Server
 
 ### 5.1 Update Tool Schemas
-- [ ] 5.1.1 Rename list_codebases → list_knowledgebases in tool-schemas.ts
-- [ ] 5.1.2 Rename search_codebases → search_knowledgebases
-- [ ] 5.1.3 Rename get_codebase_stats → get_knowledgebase_stats
-- [ ] 5.1.4 Rename open_codebase_manager → open_knowledgebase_manager
-- [ ] 5.1.5 Replace codebaseName with knowledgebaseName in input schemas
-- [ ] 5.1.6 Replace language filter with documentType filter
-- [ ] 5.1.7 Update descriptions and examples
-- [ ] 5.1.8 Replace language field with documentType in output schemas
-- [ ] 5.1.9 Update chunkType values for documents
-- [ ] 5.1.10 Add document-specific metadata fields
+- [x] 5.1.1 Rename list_codebases → list_knowledgebases in tool-schemas.ts
+- [x] 5.1.2 Rename search_codebases → search_knowledgebases
+- [x] 5.1.3 Rename get_codebase_stats → get_knowledgebase_stats
+- [x] 5.1.4 Rename open_codebase_manager → open_knowledgebase_manager
+- [x] 5.1.5 Replace codebaseName with knowledgebaseName in input schemas
+- [x] 5.1.6 Replace language filter with documentType filter
+- [x] 5.1.7 Update descriptions and examples
+- [x] 5.1.8 Replace language field with documentType in output schemas
+- [x] 5.1.9 Update chunkType values for documents
+- [x] 5.1.10 Add document-specific metadata fields
 
 ### 5.2 Update MCP Server Implementation
 - [ ] 5.2.1 Update tool handlers in mcp-server.ts

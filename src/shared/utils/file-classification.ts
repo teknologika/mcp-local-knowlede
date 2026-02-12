@@ -1,7 +1,9 @@
 /**
  * File classification utilities
- * Detects test files based on path patterns
+ * Detects test files and document types based on path patterns
  */
+
+import type { DocumentType } from '../types/index.js';
 
 /**
  * Test directory patterns
@@ -34,14 +36,46 @@ export function isTestFile(filePath: string): boolean {
 }
 
 /**
+ * Detect document type by file extension
+ */
+export function detectDocumentType(filePath: string): DocumentType | null {
+  const ext = filePath.toLowerCase().match(/\.[^.]+$/)?.[0];
+  
+  if (!ext) return null;
+
+  const typeMap: Record<string, DocumentType> = {
+    '.pdf': 'pdf',
+    '.docx': 'docx',
+    '.doc': 'docx',
+    '.pptx': 'pptx',
+    '.ppt': 'pptx',
+    '.xlsx': 'xlsx',
+    '.xls': 'xlsx',
+    '.html': 'html',
+    '.htm': 'html',
+    '.md': 'markdown',
+    '.markdown': 'markdown',
+    '.txt': 'text',
+    '.mp3': 'audio',
+    '.wav': 'audio',
+    '.m4a': 'audio',
+    '.flac': 'audio',
+  };
+
+  return typeMap[ext] || null;
+}
+
+/**
  * Classify a file path
  */
 export interface FileClassification {
   isTest: boolean;
+  documentType: DocumentType | null;
 }
 
 export function classifyFile(filePath: string): FileClassification {
   return {
     isTest: isTestFile(filePath),
+    documentType: detectDocumentType(filePath),
   };
 }

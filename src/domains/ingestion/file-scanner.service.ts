@@ -12,8 +12,31 @@ import { promises as fs, type Dirent } from 'node:fs';
 import path from 'node:path';
 import ignore, { type Ignore } from 'ignore';
 import { createLogger } from '../../shared/logging/logger.js';
+import type { DocumentType } from '../../shared/types/index.js';
 
 const logger = createLogger('info').child('FileScannerService');
+
+/**
+ * Supported document extensions
+ */
+const DOCUMENT_EXTENSIONS = new Set([
+  '.pdf',
+  '.docx',
+  '.doc',
+  '.pptx',
+  '.ppt',
+  '.xlsx',
+  '.xls',
+  '.html',
+  '.htm',
+  '.md',
+  '.markdown',
+  '.txt',
+  '.mp3',
+  '.wav',
+  '.m4a',
+  '.flac',
+]);
 
 /**
  * Statistics collected during file scanning
@@ -35,6 +58,8 @@ export interface ScannedFile {
   relativePath: string;
   extension: string;
   supported: boolean;
+  documentType?: DocumentType;
+  isTest: boolean;
 }
 
 /**
@@ -184,9 +209,10 @@ export class FileScannerService {
         // Get file extension
         const ext = path.extname(fullPath).toLowerCase();
         
-        // For now, mark all files as supported (will be refined in later tasks)
-        // This is a temporary implementation until document type detection is added
-        const supported = ext.length > 0;
+        // Check if document type is supported
+        const supported = DOCUMENT_EXTENSIONS.has(ext);
+        const documentType = supported ? this.detectDocumentType(ext) : undefined;
+        const isTest = this.isTestFile(relativePath);
         
         statistics.totalFiles++;
 
@@ -206,6 +232,8 @@ export class FileScannerService {
           relativePath,
           extension: ext,
           supported,
+          documentType,
+          isTest,
         });
       }
     }
@@ -253,5 +281,39 @@ export class FileScannerService {
    */
   getUnsupportedFiles(files: ScannedFile[]): ScannedFile[] {
     return files.filter((file) => !file.supported);
+  }
+
+  /**
+   * Detect document type by file extension
+   */
+  private detectDocumentType(ext: string): DocumentType {
+    const typeMap: Record<string, DocumentType> = {
+      '.pdf': 'pdf',
+      '.docx': 'docx',
+      '.doc': 'docx',
+      '.pptx': 'pptx',
+      '.ppt': 'pptx',
+      '.xlsx': 'xlsx',
+      '.xls': 'xlsx',
+      '.html': 'html',
+      '.htm': 'html',
+      '.md': 'markdown',
+      '.markdown': 'markdown',
+      '.txt': 'text',
+      '.mp3': 'audio',
+      '.wav': 'audio',
+      '.m4a': 'audio',
+      '.flac': 'audio',
+    };
+
+    return typeMap[ext] || 'text';
+  }
+
+  /**
+   * Check if a file path represents a test file
+   */
+  private isTestFile(filePath: string): boolean {
+    const lowerPath = filePath.toLowerCase();
+    return lowerPath.includes('test') || lowerPath.includes('spec');
   }
 }
