@@ -1,4 +1,4 @@
-# @teknologika/mcp-local-knowledge
+/.# @teknologika/mcp-local-knowledge
 
 > A local-first semantic search system for documents using the Model Context Protocol (MCP)
 
@@ -406,6 +406,18 @@ This will:
 ## Configuration
 
 The system can be configured using a JSON configuration file. The default location is `~/.knowledge-base/config.json`.
+
+### Automatic Setup
+
+On first run, the system automatically:
+- Creates the `~/.knowledge-base/` directory structure
+- Generates a default `config.json` file with sensible defaults
+- Creates subdirectories for:
+  - `lancedb/` - Vector database storage
+  - `models/` - Embedding model cache
+  - `tmp/` - Temporary file uploads
+
+No manual setup is required - just run any command and the system will initialize itself.
 
 ### Configuration File Example
 

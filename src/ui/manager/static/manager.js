@@ -446,14 +446,6 @@ function switchTab(tabName, clickedButton) {
     // If called from a button click, mark that button as active
     if (clickedButton) {
         clickedButton.classList.add('active');
-    } else {
-        // If called programmatically, find the right button based on tabName
-        const buttons = document.querySelectorAll('.tab-btn');
-        if (tabName === 'search' && buttons[0]) {
-            buttons[0].classList.add('active');
-        } else if (tabName === 'manage' && buttons[1]) {
-            buttons[1].classList.add('active');
-        }
     }
     
     // Update tab content
@@ -463,6 +455,8 @@ function switchTab(tabName, clickedButton) {
     
     if (tabName === 'search') {
         document.getElementById('searchTab').classList.add('active');
+    } else if (tabName === 'upload') {
+        document.getElementById('uploadTab').classList.add('active');
     } else if (tabName === 'manage') {
         document.getElementById('manageTab').classList.add('active');
     }
@@ -557,12 +551,26 @@ function quitManager() {
             body: JSON.stringify({})
         })
         .then(function() {
-            // Close the tab after a short delay
+            // Try multiple methods to close the tab
             setTimeout(function() {
+                // Method 1: Standard window.close()
                 window.close();
-                // If window.close() doesn't work (some browsers block it), show a message
+                
+                // Method 2: Try to close via opener
+                if (window.opener) {
+                    window.opener = null;
+                    window.close();
+                }
+                
+                // Method 3: Try opening about:blank and closing
                 setTimeout(function() {
-                    document.body.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, -apple-system, sans-serif;"><div style="text-align: center;"><h1 style="font-size: 2rem; margin-bottom: 1rem;">Manager Stopped</h1><p style="color: #666;">You can close this tab now.</p></div></div>';
+                    window.open('', '_self', '');
+                    window.close();
+                    
+                    // If all methods fail, redirect to a blank page with close instruction
+                    setTimeout(function() {
+                        window.location.href = 'about:blank';
+                    }, 100);
                 }, 100);
             }, 300);
         })

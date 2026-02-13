@@ -12,7 +12,7 @@ import { createLogger } from '../../shared/logging/index.js';
 import { randomUUID } from 'node:crypto';
 import { writeFile, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { homedir } from 'node:os';
 
 const rootLogger = createLogger('info');
 const logger = rootLogger.child('ManagerRoutes');
@@ -143,6 +143,59 @@ export async function registerManagerRoutes(
       }
     }
   );
+
+  /**
+   * POST /create-knowledgebase
+   * Create an empty knowledge base
+   */
+  fastify.post('/create-knowledgebase', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { name } = request.body as { name: string };
+    
+    try {
+      logger.info('POST /create-knowledgebase', { name });
+      
+      if (!name) {
+        (request as any).flash('message', 'Knowledge base name is required');
+        (request as any).flash('messageType', 'error');
+        return reply.redirect('/');
+      }
+      
+      // Normalize name
+      const normalizedName = name
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-_]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      if (!normalizedName) {
+        (request as any).flash('message', 'Knowledge base name must contain at least one alphanumeric character');
+        (request as any).flash('messageType', 'error');
+        return reply.redirect('/');
+      }
+      
+      // Check if already exists
+      const existing = await knowledgeBaseService.listKnowledgeBases();
+      if (existing.some(kb => kb.name === normalizedName)) {
+        (request as any).flash('message', `Knowledge base "${normalizedName}" already exists`);
+        (request as any).flash('messageType', 'error');
+        return reply.redirect('/');
+      }
+      
+      // Create empty knowledge base
+      await knowledgeBaseService.createKnowledgeBase(normalizedName);
+      
+      (request as any).flash('message', `Created knowledge base "${normalizedName}". You can now upload documents to it.`);
+      (request as any).flash('messageType', 'success');
+      return reply.redirect('/');
+    } catch (error) {
+      logger.error('Failed to create knowledge base', error instanceof Error ? error : new Error(String(error)), { name });
+      (request as any).flash('message', `Failed to create knowledge base: ${error instanceof Error ? error.message : String(error)}`);
+      (request as any).flash('messageType', 'error');
+      return reply.redirect('/');
+    }
+  });
 
   /**
    * POST /search
@@ -497,7 +550,7 @@ export async function registerManagerRoutes(
       }
       
       // Create temp directory if it doesn't exist
-      const tempDir = join(tmpdir(), 'mcp-knowledge-uploads');
+      const tempDir = join(homedir(), '.knowledge-base', 'tmp');
       await mkdir(tempDir, { recursive: true });
       
       // Save file to temp location

@@ -21,6 +21,7 @@
 
 <!-- Tab Navigation -->
 <div class="tabs">
+    {{#if knowledgeBases.length}}
     <button class="tab-btn active" onclick="switchTab('search', this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
             <circle cx="11" cy="11" r="8"/>
@@ -28,7 +29,18 @@
         </svg>
         Search
     </button>
+    <button class="tab-btn" onclick="switchTab('upload', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Upload Documents
+    </button>
     <button class="tab-btn" onclick="switchTab('manage', this)">
+    {{else}}
+    <button class="tab-btn active" onclick="switchTab('manage', this)">
+    {{/if}}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
             <path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
         </svg>
@@ -38,9 +50,8 @@
 </div>
 
 <!-- Search Tab Content -->
-<div id="searchTab" class="tab-content active">
-
-<!-- Hero Search Section -->
+{{#if knowledgeBases.length}}
+<div id="searchTab" class="tab-content active"><!-- Hero Search Section -->
 <div class="card hero-search">
     <div class="card-header">
         <div>
@@ -140,9 +151,96 @@
     {{/if}}
 </div>
 </div>
+{{/if}}
+
+<!-- Upload Documents Tab Content -->
+{{#if knowledgeBases.length}}
+<div id="uploadTab" class="tab-content">
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">Upload Documents</h3>
+            <p class="card-subtitle">Add individual files or folders to an existing knowledge base</p>
+        </div>
+    </div>
+    
+    <!-- Knowledge Base Selection -->
+    <div class="form-group">
+        <label class="form-label">Select Knowledge Base</label>
+        <select id="uploadKnowledgeBase" class="form-input">
+            <option value="">Choose a knowledge base...</option>
+            {{#each knowledgeBases}}
+            <option value="{{name}}">{{displayName name}}</option>
+            {{/each}}
+        </select>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+            Files will be added to the selected knowledge base
+        </p>
+    </div>
+    
+    <!-- Drag and Drop Zone -->
+    <div id="dropZone" class="drop-zone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <p style="font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem;">Drag and drop files here</p>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">or</p>
+        <div style="display: flex; gap: 0.75rem; justify-content: center;">
+            <label class="btn btn-primary" style="cursor: pointer;">
+                <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.html,.htm,.md,.markdown,.txt,.mp3,.wav,.m4a,.flac" style="display: none;">
+                Choose Files
+            </label>
+            <label class="btn btn-ghost" style="cursor: pointer;">
+                <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+                Choose Folder
+            </label>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1rem;">
+            Supported: PDF, Word, PowerPoint, Excel, HTML, Markdown, Text, Audio (MP3, WAV, M4A, FLAC)
+        </p>
+    </div>
+    
+    <!-- File List -->
+    <div id="fileListContainer" style="display: none; margin-top: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h4 style="font-size: 1rem; font-weight: 600;">Selected Files (<span id="fileCount">0</span>)</h4>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="clearFileList()">Clear All</button>
+        </div>
+        <div id="fileList" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+            <!-- Files will be added here dynamically -->
+        </div>
+        <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
+            <button type="button" class="btn btn-primary" onclick="startUpload()" id="uploadBtn" style="flex: 1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload Files
+            </button>
+        </div>
+    </div>
+    
+    <!-- Upload Progress -->
+    <div id="uploadProgress" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+        <h4 style="font-size: 1rem; margin-bottom: 1rem;">Upload Progress</h4>
+        <div id="uploadProgressList">
+            <!-- Progress items will be added here -->
+        </div>
+    </div>
+    
+    <!-- Upload Messages -->
+    <div id="uploadMessages" style="margin-top: 1rem;">
+        <!-- Success/error messages will be added here -->
+    </div>
+</div>
+</div>
+{{/if}}
 
 <!-- Manage Knowledge Bases Tab Content -->
-<div id="manageTab" class="tab-content">
+<div id="manageTab" class="tab-content{{#unless knowledgeBases.length}} active{{/unless}}">
 <!-- Knowledge Bases Section -->
 <div style="margin-top: 2rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;" id="codebasesHeader">
@@ -229,148 +327,23 @@
     <div class="card-header">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <div>
-                <h3 class="card-title">Add New Knowledge Base</h3>
-                <p class="card-subtitle">Index documents for semantic search</p>
+                <h3 class="card-title">Create Knowledge Base</h3>
+                <p class="card-subtitle">Enter a name for your new knowledge base</p>
             </div>
             <button type="button" class="btn btn-ghost" onclick="hideIngestForm()">×</button>
         </div>
     </div>
-    <form method="POST" action="/ingest" id="ingestForm">
+    <form method="POST" action="/create-knowledgebase" id="createKnowledgeBaseForm">
         <div class="form-group">
             <label class="form-label">Knowledge Base Name</label>
-            <input type="text" name="name" id="codebaseName" class="form-input" placeholder="my documents" required>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
-                Use spaces or hyphens - spaces will be shown as title case in the UI
-            </p>
-        </div>
-        <div class="form-group">
-            <label class="form-label">Directory Path</label>
-            <div style="display: flex; gap: 0.5rem;">
-                <input type="text" name="path" id="pathInput" class="form-input" placeholder="/path/to/documents" required style="flex: 1;">
-                <button type="button" class="btn btn-primary" onclick="selectFolder()" id="folderPickerBtn">
-                    Browse...
-                </button>
-            </div>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;" id="folderPickerHelp">
-                Click "Browse..." to select a folder, or enter path manually
-            </p>
-        </div>
-        <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                <input type="checkbox" name="respectGitignore" value="true" checked style="width: 18px; height: 18px; cursor: pointer;">
-                <span style="font-size: 0.875rem;">Respect .gitignore (recommended)</span>
-            </label>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; margin-left: 1.625rem;">
-                Skip files and folders listed in .gitignore (e.g., node_modules, build artifacts)
-            </p>
+            <input type="text" name="name" id="knowledgeBaseName" class="form-input" placeholder="my documents" required autofocus>
         </div>
         <div style="display: flex; gap: 0.75rem;">
             <button type="button" class="btn btn-ghost" onclick="hideIngestForm()">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="ingestSubmitBtn">Start Ingestion</button>
+            <button type="submit" class="btn btn-primary">Create Knowledge Base</button>
         </div>
     </form>
-    
-    <!-- Ingestion Progress (Hidden by default) -->
-    <div id="ingestionProgress" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-        <h4 style="font-size: 1rem; margin-bottom: 1rem;">Ingestion Progress</h4>
-        <div style="margin-bottom: 0.5rem;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                <span id="progressPhase" style="font-size: 0.875rem; color: var(--text-secondary);">Initializing...</span>
-                <span id="progressPercent" style="font-size: 0.875rem; font-weight: 500;">0%</span>
-            </div>
-            <div style="background: var(--bg-surface); height: 8px; border-radius: 4px; overflow: hidden;">
-                <div id="progressBar" style="background: var(--accent); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
-            </div>
-        </div>
-        <p id="progressDetails" style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 0.5rem;">
-            Preparing to ingest documents...
-        </p>
-    </div>
 </div>
-
-<!-- File Upload Section -->
-{{#if knowledgeBases.length}}
-<div class="card" style="margin-top: 2rem;">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">Upload Documents</h3>
-            <p class="card-subtitle">Add individual files or folders to an existing knowledge base</p>
-        </div>
-    </div>
-    
-    <!-- Knowledge Base Selection -->
-    <div class="form-group">
-        <label class="form-label">Select Knowledge Base</label>
-        <select id="uploadKnowledgeBase" class="form-input">
-            <option value="">Choose a knowledge base...</option>
-            {{#each knowledgeBases}}
-            <option value="{{name}}">{{displayName name}}</option>
-            {{/each}}
-        </select>
-        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
-            Files will be added to the selected knowledge base
-        </p>
-    </div>
-    
-    <!-- Drag and Drop Zone -->
-    <div id="dropZone" class="drop-zone">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-        </svg>
-        <p style="font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem;">Drag and drop files here</p>
-        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">or</p>
-        <div style="display: flex; gap: 0.75rem; justify-content: center;">
-            <label class="btn btn-primary" style="cursor: pointer;">
-                <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.html,.htm,.md,.markdown,.txt,.mp3,.wav,.m4a,.flac" style="display: none;">
-                Choose Files
-            </label>
-            <label class="btn btn-ghost" style="cursor: pointer;">
-                <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
-                Choose Folder
-            </label>
-        </div>
-        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1rem;">
-            Supported: PDF, Word, PowerPoint, Excel, HTML, Markdown, Text, Audio (MP3, WAV, M4A, FLAC)
-        </p>
-    </div>
-    
-    <!-- File List -->
-    <div id="fileListContainer" style="display: none; margin-top: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h4 style="font-size: 1rem; font-weight: 600;">Selected Files (<span id="fileCount">0</span>)</h4>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="clearFileList()">Clear All</button>
-        </div>
-        <div id="fileList" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
-            <!-- Files will be added here dynamically -->
-        </div>
-        <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
-            <button type="button" class="btn btn-primary" onclick="startUpload()" id="uploadBtn" style="flex: 1;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                Upload Files
-            </button>
-        </div>
-    </div>
-    
-    <!-- Upload Progress -->
-    <div id="uploadProgress" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-        <h4 style="font-size: 1rem; margin-bottom: 1rem;">Upload Progress</h4>
-        <div id="uploadProgressList">
-            <!-- Progress items will be added here -->
-        </div>
-    </div>
-    
-    <!-- Upload Messages -->
-    <div id="uploadMessages" style="margin-top: 1rem;">
-        <!-- Success/error messages will be added here -->
-    </div>
-</div>
-{{/if}}
 </div>
 
 <!-- Rename Modal -->

@@ -37,6 +37,55 @@ export class KnowledgeBaseService {
   }
 
   /**
+   * Create an empty knowledge base
+   * Creates a table with a placeholder record so the KB exists
+   */
+  async createKnowledgeBase(name: string): Promise<void> {
+    try {
+      logger.debug('Creating empty knowledge base', { knowledgeBaseName: name });
+
+      const timestamp = new Date().toISOString();
+      
+      // Create a placeholder chunk matching the schema used by storeChunks
+      const placeholderChunk = {
+        id: `${name}_placeholder_${timestamp}`,
+        vector: new Array(384).fill(0), // Empty embedding vector (384 dimensions for all-MiniLM-L6-v2)
+        content: '',
+        filePath: '',
+        startLine: 0,
+        endLine: 0,
+        chunkType: 'placeholder',
+        documentType: 'placeholder',
+        tokenCount: 0,
+        isTestFile: false,
+        headingPath: ['placeholder'], // Must have at least one element for LanceDB schema inference
+        pageNumber: 0,
+        ingestionTimestamp: timestamp,
+        _knowledgeBaseName: name,
+        _path: '',
+        _lastIngestion: timestamp,
+        _isPlaceholder: true,
+      };
+
+      // Create table with placeholder
+      await this.lanceClient.createTableWithData(name, [placeholderChunk]);
+
+      logger.debug('Empty knowledge base created successfully', { knowledgeBaseName: name });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(
+        'Failed to create empty knowledge base',
+        error instanceof Error ? error : new Error(errorMessage),
+        { knowledgeBaseName: name }
+      );
+      throw new KnowledgeBaseError(
+        `Failed to create knowledge base '${name}': ${errorMessage}`,
+        error
+      );
+    }
+  }
+
+  /**
    * List all knowledge bases with metadata
    */
   async listKnowledgeBases(): Promise<KnowledgeBaseMetadata[]> {
@@ -47,23 +96,25 @@ export class KnowledgeBaseService {
       const knowledgeBases: KnowledgeBaseMetadata[]  = [];
 
       for (const table of tables) {
-        const metadata = table.metadata;
-        
-        // Only include tables that are knowledge base tables
-        if (!metadata?.knowledgeBaseName) {
+        // All tables from listTables() are already filtered to knowledgebase_ prefix
+        // Extract knowledge base name from table name pattern: knowledgebase_{name}_{version}
+        const match = table.name.match(/^knowledgebase_(.+)_\d+_\d+_\d+$/);
+        if (!match) {
+          logger.warn('Table name does not match expected pattern', { tableName: table.name });
           continue;
         }
 
-        const knowledgeBaseName = metadata.knowledgeBaseName as string;
+        // Convert underscores back to hyphens for display name
+        const knowledgeBaseName = match[1].replace(/_/g, '-');
         
         // Open table directly by name
         const lanceTable = await this.lanceClient.getConnection().openTable(table.name);
-        const count = await lanceTable.countRows();
         
         // Extract metadata from first row if available
         let path = '';
         let fileCount = 0;
         let lastIngestion = '';
+        let chunkCount = 0;
 
         try {
           const sample = await lanceTable.query().limit(1).toArray();
@@ -72,11 +123,15 @@ export class KnowledgeBaseService {
             path = firstRow._path || '';
             lastIngestion = firstRow._lastIngestion || firstRow._createdAt || '';
             
-            // Get unique file count from all rows
-            const allRows = await lanceTable.query().select(['filePath']).toArray();
+            // Get all rows to count chunks and files, excluding placeholders
+            const allRows = await lanceTable.query().select(['filePath', '_isPlaceholder']).toArray();
             const uniqueFiles = new Set<string>();
             
             for (const row of allRows) {
+              // Skip placeholder records
+              if (row._isPlaceholder) continue;
+              
+              chunkCount++;
               if (row.filePath) uniqueFiles.add(row.filePath);
             }
             
@@ -90,7 +145,7 @@ export class KnowledgeBaseService {
         knowledgeBases.push({
           name: knowledgeBaseName,
           path,
-          chunkCount: count,
+          chunkCount,
           fileCount,
           lastIngestion,
         });

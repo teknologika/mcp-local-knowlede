@@ -3,7 +3,7 @@
  * Loads configuration from environment variables and config file
  */
 
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { resolve, join } from 'path';
 import AjvModule, { type JSONSchemaType } from 'ajv';
@@ -332,6 +332,60 @@ function expandConfigPaths(config: Config): Config {
 }
 
 /**
+ * Ensure required directories exist
+ * Creates the .knowledge-base directory structure if it doesn't exist
+ */
+function ensureDirectories(config: Config): void {
+  const baseDir = join(homedir(), '.knowledge-base');
+  const dirsToCreate = [
+    baseDir,
+    config.lancedb.persistPath,
+    config.embedding.cachePath,
+    join(baseDir, 'tmp'),
+  ];
+
+  for (const dir of dirsToCreate) {
+    if (!existsSync(dir)) {
+      try {
+        mkdirSync(dir, { recursive: true });
+      } catch (error) {
+        // Silently ignore errors - directories might be created by other processes
+        // or permissions might prevent creation (will fail later when actually needed)
+      }
+    }
+  }
+}
+
+/**
+ * Create default config file if it doesn't exist
+ * Only creates if the .knowledge-base directory exists or can be created
+ */
+function ensureDefaultConfig(): void {
+  const baseDir = join(homedir(), '.knowledge-base');
+  const configPath = join(baseDir, 'config.json');
+
+  // Only create if base directory exists or can be created
+  if (!existsSync(baseDir)) {
+    try {
+      mkdirSync(baseDir, { recursive: true });
+    } catch (error) {
+      // Can't create directory, skip config creation
+      return;
+    }
+  }
+
+  // Create default config if it doesn't exist
+  if (!existsSync(configPath)) {
+    try {
+      const defaultConfigContent = JSON.stringify(DEFAULT_CONFIG, null, 2);
+      writeFileSync(configPath, defaultConfigContent, 'utf-8');
+    } catch (error) {
+      // Silently ignore - config file is optional
+    }
+  }
+}
+
+/**
  * Load and validate configuration
  * 
  * Configuration is loaded in the following order (later sources override earlier ones):
@@ -340,11 +394,16 @@ function expandConfigPaths(config: Config): Config {
  * 3. Configuration file (if explicitly provided via configPath parameter)
  * 4. Environment variables
  * 
+ * Also ensures required directories exist and creates default config if needed.
+ * 
  * @param configPath - Optional path to configuration file (overrides default location)
  * @returns Validated configuration object
  * @throws ConfigValidationError if configuration is invalid
  */
 export function loadConfig(configPath?: string): Config {
+  // Ensure default config exists (creates ~/.knowledge-base/config.json if missing)
+  ensureDefaultConfig();
+
   // Start with defaults
   let config: Config = { ...DEFAULT_CONFIG };
 
@@ -384,6 +443,9 @@ export function loadConfig(configPath?: string): Config {
       errors
     );
   }
+
+  // Ensure required directories exist
+  ensureDirectories(config);
 
   return config;
 }
