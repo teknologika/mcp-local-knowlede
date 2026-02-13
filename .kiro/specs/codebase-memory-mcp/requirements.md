@@ -27,10 +27,10 @@ The Codebase Memory MCP Server is a local-first semantic search system that enab
 
 #### Acceptance Criteria
 
-1. WHEN an assistant calls `list_codebases`, THE MCP_Server SHALL return all indexed codebases with their names, paths, and statistics
-2. WHEN an assistant calls `search_codebases` with a query and optional codebase filter, THE MCP_Server SHALL return semantically relevant code chunks ranked by similarity
-3. WHEN an assistant calls `get_codebase_stats` with a codebase name, THE MCP_Server SHALL return detailed statistics including chunk count, file count, language distribution, and last ingestion timestamp
-4. WHEN an assistant calls `open_codebase_manager`, THE MCP_Server SHALL launch the Manager_UI in the default browser
+1. WHEN an assistant calls `list_knowledgebases`, THE MCP_Server SHALL return all indexed knowledge bases with their names, paths, and statistics
+2. WHEN an assistant calls `search_knowledgebases` with a query and optional codebase filter, THE MCP_Server SHALL return semantically relevant code chunks ranked by similarity
+3. WHEN an assistant calls `get_knowledgebase_stats` with a codebase name, THE MCP_Server SHALL return detailed statistics including chunk count, file count, language distribution, and last ingestion timestamp
+4. WHEN an assistant calls `open_knowledgebase_manager`, THE MCP_Server SHALL launch the Manager_UI in the default browser
 5. WHEN search results are returned, THE MCP_Server SHALL include file path, line numbers, language, chunk type, and similarity score for each result
 
 ### Requirement 2: Local Ingestion Pipeline
@@ -97,12 +97,12 @@ The Codebase Memory MCP Server is a local-first semantic search system that enab
 
 ### Requirement 7: Fastify Manager UI
 
-**User Story:** As a developer, I want a web interface to manage my indexed codebases, so that I can view statistics, rename, and delete codebases without using the CLI.
+**User Story:** As a developer, I want a web interface to manage my indexed knowledge bases, so that I can view statistics, rename, and delete codebases without using the CLI.
 
 #### Acceptance Criteria
 
 1. WHEN the Fastify_Server starts, THE system SHALL serve a single-page web application on a configurable port
-2. WHEN the Manager_UI loads, THE system SHALL display a list of all indexed codebases with their statistics
+2. WHEN the Manager_UI loads, THE system SHALL display a list of all indexed knowledge bases with their statistics
 3. WHEN a user selects a codebase, THE Manager_UI SHALL display detailed statistics including chunk count, file count, language distribution, and last ingestion date
 4. WHEN a user renames a codebase, THE Manager_UI SHALL update the codebase name in LanceDB and refresh the display
 5. WHEN a user deletes a codebase, THE Manager_UI SHALL remove all associated chunks from LanceDB and refresh the display
@@ -114,11 +114,11 @@ The Codebase Memory MCP Server is a local-first semantic search system that enab
 
 #### Acceptance Criteria
 
-1. WHEN a GET request is made to `/api/codebases`, THE Fastify_Server SHALL return a JSON array of all codebases with metadata
+1. WHEN a GET request is made to `/api/knowledgebases`, THE Fastify_Server SHALL return a JSON array of all knowledge bases with metadata
 2. WHEN a POST request is made to `/api/search` with a query and optional filters, THE Fastify_Server SHALL return search results as JSON
-3. WHEN a GET request is made to `/api/codebases/:name/stats`, THE Fastify_Server SHALL return detailed statistics for the specified codebase
-4. WHEN a PUT request is made to `/api/codebases/:name` with a new name, THE Fastify_Server SHALL rename the codebase
-5. WHEN a DELETE request is made to `/api/codebases/:name`, THE Fastify_Server SHALL delete the codebase and return success status
+3. WHEN a GET request is made to `/api/knowledgebases/:name/stats`, THE Fastify_Server SHALL return detailed statistics for the specified codebase
+4. WHEN a PUT request is made to `/api/knowledgebases/:name` with a new name, THE Fastify_Server SHALL rename the codebase
+5. WHEN a DELETE request is made to `/api/knowledgebases/:name`, THE Fastify_Server SHALL delete the codebase and return success status
 6. WHEN any API error occurs, THE Fastify_Server SHALL return appropriate HTTP status codes and error messages
 
 ### Requirement 9: Package Structure and Entry Points

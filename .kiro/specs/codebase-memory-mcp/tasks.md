@@ -144,7 +144,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - _Requirements: 1.1, 1.3, 7.3, 7.4, 7.5, 7.6, 8.1, 8.3_
 
   - [ ]* 7.2 Write property tests for codebase service
-    - **Property 1: Codebase Retrieval Completeness** - For any set of indexed codebases, list_codebases should return all with complete metadata
+    - **Property 1: Codebase Retrieval Completeness** - For any set of indexed knowledge bases, list_knowledgebases should return all with complete metadata
     - **Property 4: Statistics Accuracy** - For any codebase, statistics should accurately reflect actual counts in LanceDB
     - **Property 17: Codebase Deletion Completeness** - For any codebase, deletion should remove table and all chunks
     - **Property 19: Codebase Rename Propagation** - For any codebase, renaming should update all chunk metadata
@@ -217,10 +217,10 @@ This implementation plan breaks down the codebase memory MCP server into increme
 
 - [ ] 11. Phase 6: MCP Server Implementation
   - [x] 11.1 Define MCP tool schemas
-    - Create JSON schemas for list_codebases tool (no input, returns codebase array)
-    - Create JSON schemas for search_codebases tool (query + optional filters, returns search results)
-    - Create JSON schemas for get_codebase_stats tool (name input, returns detailed stats)
-    - Create JSON schemas for open_codebase_manager tool (no input, returns URL)
+    - Create JSON schemas for list_knowledgebases tool (no input, returns codebase array)
+    - Create JSON schemas for search_knowledgebases tool (query + optional filters, returns search results)
+    - Create JSON schemas for get_knowledgebase_stats tool (name input, returns detailed stats)
+    - Create JSON schemas for open_knowledgebase_manager tool (no input, returns URL)
     - Add schema descriptions for each tool and all parameters
     - Define input validation rules and output formats
     - _Requirements: 15.1_
@@ -231,10 +231,10 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Add input validation against tool schemas using AJV
     - Format successful responses in MCP-compliant format
     - Format error responses in MCP-compliant format with error codes
-    - Handle list_codebases by delegating to codebase service
-    - Handle search_codebases by delegating to search service
-    - Handle get_codebase_stats by delegating to codebase service
-    - Handle open_codebase_manager by launching browser to localhost:8008
+    - Handle list_knowledgebases by delegating to codebase service
+    - Handle search_knowledgebases by delegating to search service
+    - Handle get_knowledgebase_stats by delegating to codebase service
+    - Handle open_knowledgebase_manager by launching browser to localhost:8008
     - Implement stdio transport for communication with MCP clients
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 11.3, 15.1, 15.2, 15.3, 15.4, 15.5_
 
@@ -248,7 +248,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
     - Test each tool with valid inputs
     - Test each tool with invalid inputs
     - Test error handling for service failures
-    - Test browser launching for open_codebase_manager
+    - Test browser launching for open_knowledgebase_manager
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
   - [x] 11.5 Create MCP server entry point
@@ -271,12 +271,12 @@ This implementation plan breaks down the codebase memory MCP server into increme
 
 - [ ] 13. Phase 7: Fastify Manager UI and API
   - [x] 13.1 Implement HTTP API endpoints
-    - Create GET /api/codebases endpoint returning all codebases with metadata
+    - Create GET /api/knowledgebases endpoint returning all knowledge bases with metadata
     - Create POST /api/search endpoint with query and filter parameters
-    - Create GET /api/codebases/:name/stats endpoint for detailed statistics
-    - Create PUT /api/codebases/:name endpoint for renaming
-    - Create DELETE /api/codebases/:name endpoint for deletion
-    - Create DELETE /api/codebases/:name/chunk-sets/:timestamp endpoint for chunk set deletion
+    - Create GET /api/knowledgebases/:name/stats endpoint for detailed statistics
+    - Create PUT /api/knowledgebases/:name endpoint for renaming
+    - Create DELETE /api/knowledgebases/:name endpoint for deletion
+    - Create DELETE /api/knowledgebases/:name/chunk-sets/:timestamp endpoint for chunk set deletion
     - Add input validation with AJV schemas for all endpoints
     - Implement error handling with appropriate HTTP status codes (400, 404, 500)
     - Return JSON error responses with code and message
@@ -296,7 +296,7 @@ This implementation plan breaks down the codebase memory MCP server into increme
 
   - [x] 13.4 Create single-page manager UI
     - Build HTML page with embedded CSS and JavaScript
-    - Display list of all codebases with statistics in a table
+    - Display list of all knowledge bases with statistics in a table
     - Add codebase selection to show detailed statistics (language distribution, chunk types)
     - Implement rename functionality with inline editing
     - Implement delete functionality with confirmation dialog

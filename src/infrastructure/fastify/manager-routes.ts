@@ -37,7 +37,7 @@ const ingestionJobs = new Map<string, IngestionJob>();
  */
 export async function registerManagerRoutes(
   fastify: FastifyInstance,
-  codebaseService: KnowledgeBaseService,
+  knowledgeBaseService: KnowledgeBaseService,
   searchService: SearchService,
   ingestionService: IngestionService,
   config: Config
@@ -92,7 +92,7 @@ export async function registerManagerRoutes(
    */
   fastify.get('/', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const codebases = await codebaseService.listKnowledgeBases();
+      const codebases = await knowledgeBaseService.listKnowledgeBases();
       
       logger.debug('Knowledge bases loaded', { count: codebases.length, codebases: codebases.map(c => ({ name: c.name, fileCount: c.fileCount, lastIngestion: c.lastIngestion })) });
       
@@ -126,8 +126,8 @@ export async function registerManagerRoutes(
       const { name } = request.params;
       
       try {
-        const stats = await codebaseService.getKnowledgeBaseStats(name);
-        const codebases = await codebaseService.listKnowledgeBases();
+        const stats = await knowledgeBaseService.getKnowledgeBaseStats(name);
+        const codebases = await knowledgeBaseService.listKnowledgeBases();
         
         return reply.view('index.hbs', {
           title: name,
@@ -170,7 +170,7 @@ export async function registerManagerRoutes(
         excludeTests: excludeTests === 'true',
       });
       
-      const codebases = await codebaseService.listKnowledgeBases();
+      const codebases = await knowledgeBaseService.listKnowledgeBases();
       
       return reply.view('index.hbs', {
         title: 'Search Results',
@@ -393,7 +393,7 @@ export async function registerManagerRoutes(
         return reply.redirect('/');
       }
       
-      await codebaseService.renameKnowledgeBase(oldName, normalizedNewName);
+      await knowledgeBaseService.renameKnowledgeBase(oldName, normalizedNewName);
       
       (request as any).flash('message', `Renamed ${oldName} to ${normalizedNewName}`);
       (request as any).flash('messageType', 'success');
@@ -422,7 +422,7 @@ export async function registerManagerRoutes(
         return reply.redirect('/');
       }
       
-      await codebaseService.deleteKnowledgeBase(name);
+      await knowledgeBaseService.deleteKnowledgeBase(name);
       
       (request as any).flash('message', `Deleted ${name}`);
       (request as any).flash('messageType', 'success');
@@ -488,7 +488,7 @@ export async function registerManagerRoutes(
       }
       
       // Verify knowledge base exists
-      const kbs = await codebaseService.listKnowledgeBases();
+      const kbs = await knowledgeBaseService.listKnowledgeBases();
       const kb = kbs.find(k => k.name === knowledgeBaseName);
       if (!kb) {
         return reply.status(404).send({

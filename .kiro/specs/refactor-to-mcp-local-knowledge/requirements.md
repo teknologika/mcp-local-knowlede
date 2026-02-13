@@ -128,10 +128,10 @@ The system will maintain its local-first architecture, MCP protocol integration,
 
 #### Acceptance Criteria
 
-1. THE MCP_Server SHALL rename tool "list_codebases" to "list_knowledgebases"
-2. THE MCP_Server SHALL rename tool "search_codebases" to "search_knowledgebases"
-3. THE MCP_Server SHALL rename tool "get_codebase_stats" to "get_knowledgebase_stats"
-4. THE MCP_Server SHALL rename tool "open_codebase_manager" to "open_knowledgebase_manager"
+1. THE MCP_Server SHALL rename tool "list_knowledgebases" to "list_knowledgebases"
+2. THE MCP_Server SHALL rename tool "search_knowledgebases" to "search_knowledgebases"
+3. THE MCP_Server SHALL rename tool "get_knowledgebase_stats" to "get_knowledgebase_stats"
+4. THE MCP_Server SHALL rename tool "open_knowledgebase_manager" to "open_knowledgebase_manager"
 5. WHEN a tool schema is defined, THE MCP_Server SHALL replace parameter "codebaseName" with "knowledgebaseName"
 6. WHEN a tool schema is defined, THE MCP_Server SHALL replace filter "language" with "documentType"
 7. WHEN a tool schema is defined, THE MCP_Server SHALL update descriptions to reflect document focus
@@ -273,7 +273,7 @@ The system will maintain its local-first architecture, MCP protocol integration,
 2. THE Documentation SHALL provide steps to backup existing data
 3. THE Documentation SHALL provide steps to uninstall old package
 4. THE Documentation SHALL provide steps to install new package
-5. THE Documentation SHALL provide steps to migrate data from "~/.codebase-memory/" to "~/.knowledge-base/"
+5. THE Documentation SHALL provide steps to migrate data from "~/.knowledge-base/" to "~/.knowledge-base/"
 6. THE Documentation SHALL provide updated MCP client configuration examples
 7. THE Documentation SHALL document all renamed commands and tools
 

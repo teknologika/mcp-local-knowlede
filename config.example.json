@@ -1,10 +1,10 @@
 {
   "lancedb": {
-    "persistPath": "~/.codebase-memory/lancedb"
+    "persistPath": "~/.knowledge-base/lancedb"
   },
   "embedding": {
     "modelName": "Xenova/all-MiniLM-L6-v2",
-    "cachePath": "~/.codebase-memory/models"
+    "cachePath": "~/.knowledge-base/models"
   },
   "server": {
     "port": 8009,

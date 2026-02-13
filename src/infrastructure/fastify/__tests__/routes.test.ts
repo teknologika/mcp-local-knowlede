@@ -39,7 +39,7 @@ describe('Fastify API Routes', () => {
     await registerRoutes(fastify, mockKnowledgeBaseService, mockSearchService);
   });
 
-  describe('GET /api/codebases', () => {
+  describe('GET /api/knowledgebases', () => {
     it('should return list of knowledge bases', async () => {
       const mockKnowledgeBases: KnowledgeBaseMetadata[] = [
         {
@@ -55,7 +55,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'GET',
-        url: '/api/codebases',
+        url: '/api/knowledgebases',
       });
 
       expect(response.statusCode).toBe(200);
@@ -71,7 +71,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'GET',
-        url: '/api/codebases',
+        url: '/api/knowledgebases',
       });
 
       expect(response.statusCode).toBe(500);
@@ -208,7 +208,7 @@ describe('Fastify API Routes', () => {
     });
   });
 
-  describe('GET /api/codebases/:name/stats', () => {
+  describe('GET /api/knowledgebases/:name/stats', () => {
     it('should return knowledge base statistics', async () => {
       const mockStats: KnowledgeBaseStats = {
         name: 'test-knowledgebase',
@@ -231,7 +231,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'GET',
-        url: '/api/codebases/test-knowledgebase/stats',
+        url: '/api/knowledgebases/test-knowledgebase/stats',
       });
 
       expect(response.statusCode).toBe(200);
@@ -247,7 +247,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'GET',
-        url: '/api/codebases/non-existent/stats',
+        url: '/api/knowledgebases/non-existent/stats',
       });
 
       expect(response.statusCode).toBe(404);
@@ -262,7 +262,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'GET',
-        url: '/api/codebases/test-knowledgebase/stats',
+        url: '/api/knowledgebases/test-knowledgebase/stats',
       });
 
       expect(response.statusCode).toBe(500);
@@ -271,13 +271,13 @@ describe('Fastify API Routes', () => {
     });
   });
 
-  describe('PUT /api/codebases/:name', () => {
+  describe('PUT /api/knowledgebases/:name', () => {
     it('should rename knowledge base successfully', async () => {
       vi.mocked(mockKnowledgeBaseService.renameKnowledgeBase).mockResolvedValue(undefined);
 
       const response = await fastify.inject({
         method: 'PUT',
-        url: '/api/codebases/old-name',
+        url: '/api/knowledgebases/old-name',
         payload: {
           newName: 'new-name',
         },
@@ -297,7 +297,7 @@ describe('Fastify API Routes', () => {
     it('should return 400 for missing newName', async () => {
       const response = await fastify.inject({
         method: 'PUT',
-        url: '/api/codebases/old-name',
+        url: '/api/knowledgebases/old-name',
         payload: {},
       });
 
@@ -313,7 +313,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'PUT',
-        url: '/api/codebases/non-existent',
+        url: '/api/knowledgebases/non-existent',
         payload: {
           newName: 'new-name',
         },
@@ -331,7 +331,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'PUT',
-        url: '/api/codebases/old-name',
+        url: '/api/knowledgebases/old-name',
         payload: {
           newName: 'new-name',
         },
@@ -343,13 +343,13 @@ describe('Fastify API Routes', () => {
     });
   });
 
-  describe('DELETE /api/codebases/:name', () => {
+  describe('DELETE /api/knowledgebases/:name', () => {
     it('should delete knowledge base successfully', async () => {
       vi.mocked(mockKnowledgeBaseService.deleteKnowledgeBase).mockResolvedValue(undefined);
 
       const response = await fastify.inject({
         method: 'DELETE',
-        url: '/api/codebases/test-knowledgebase',
+        url: '/api/knowledgebases/test-knowledgebase',
       });
 
       expect(response.statusCode).toBe(200);
@@ -366,7 +366,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'DELETE',
-        url: '/api/codebases/non-existent',
+        url: '/api/knowledgebases/non-existent',
       });
 
       expect(response.statusCode).toBe(404);
@@ -381,7 +381,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'DELETE',
-        url: '/api/codebases/test-knowledgebase',
+        url: '/api/knowledgebases/test-knowledgebase',
       });
 
       expect(response.statusCode).toBe(500);
@@ -390,13 +390,13 @@ describe('Fastify API Routes', () => {
     });
   });
 
-  describe('DELETE /api/codebases/:name/chunk-sets/:timestamp', () => {
+  describe('DELETE /api/knowledgebases/:name/chunk-sets/:timestamp', () => {
     it('should delete chunk set successfully', async () => {
       vi.mocked(mockKnowledgeBaseService.deleteChunkSet).mockResolvedValue(50);
 
       const response = await fastify.inject({
         method: 'DELETE',
-        url: '/api/codebases/test-knowledgebase/chunk-sets/2024-01-01T00:00:00Z',
+        url: '/api/knowledgebases/test-knowledgebase/chunk-sets/2024-01-01T00:00:00Z',
       });
 
       expect(response.statusCode).toBe(200);
@@ -417,7 +417,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'DELETE',
-        url: '/api/codebases/non-existent/chunk-sets/2024-01-01T00:00:00Z',
+        url: '/api/knowledgebases/non-existent/chunk-sets/2024-01-01T00:00:00Z',
       });
 
       expect(response.statusCode).toBe(404);
@@ -432,7 +432,7 @@ describe('Fastify API Routes', () => {
 
       const response = await fastify.inject({
         method: 'DELETE',
-        url: '/api/codebases/test-knowledgebase/chunk-sets/2024-01-01T00:00:00Z',
+        url: '/api/knowledgebases/test-knowledgebase/chunk-sets/2024-01-01T00:00:00Z',
       });
 
       expect(response.statusCode).toBe(500);

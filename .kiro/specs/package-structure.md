@@ -175,7 +175,7 @@ mcp-knowledge-manager      # Web UI for management
 **Renamed:**
 - 🔄 `src/domains/codebase/` → `src/domains/knowledgebase/`
 - 🔄 All "codebase" references → "knowledgebase"
-- 🔄 `.codebase-memory/` → `.knowledge-base/`
+- 🔄 `.knowledge-base/` → `.knowledge-base/`
 
 ---
 
@@ -422,7 +422,7 @@ twine upload dist/*
 
 ### Local Data Directory
 
-**Old**: `~/.codebase-memory/`  
+**Old**: `~/.knowledge-base/`  
 **New**: `~/.knowledge-base/`
 
 ```

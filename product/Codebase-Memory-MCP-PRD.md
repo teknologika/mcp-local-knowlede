@@ -53,7 +53,7 @@ Teams that require a managed cloud service, cross-organisation indexing, or host
 
 | Priority | Capability | Rationale |
 |----------|------------|-----------|
-| Must | MCP server exposing `list_codebases`, `search_codebases`, `get_codebase_stats`, `open_codebase_manager` | This is the assistant integration contract and primary value surface. |
+| Must | MCP server exposing `list_knowledgebases`, `search_knowledgebases`, `get_knowledgebase_stats`, `open_knowledgebase_manager` | This is the assistant integration contract and primary value surface. |
 | Must | Ingestion CLI that recursively ingests a directory into a named codebase | Without ingestion there is no data, and CLI enables workflow automation. |
 | Must | Local persistence in ChromaDB for vectors and metadata | Required store for chunk vectors, provenance metadata, and similarity retrieval. |
 | Must | Local embeddings using `@huggingface/transformers` with out of the box defaults | Required to satisfy local-only constraints without early tuning work. |
@@ -69,7 +69,7 @@ The MVP is a local-first pipeline that indexes a repository into ChromaDB with s
 
 ### User Flow
 
-A user runs the ingestion CLI to index a repository into a named codebase, then uses the manager UI to confirm file counts and chunk counts. They then use an MCP-capable assistant to call `list_codebases` and `search_codebases` to retrieve relevant chunks with file paths, symbol hints, and chunk ranges, and the user opens the right files in their editor. When code changes, the user re-runs ingestion for that codebase to refresh the index.
+A user runs the ingestion CLI to index a repository into a named codebase, then uses the manager UI to confirm file counts and chunk counts. They then use an MCP-capable assistant to call `list_knowledgebases` and `search_knowledgebases` to retrieve relevant chunks with file paths, symbol hints, and chunk ranges, and the user opens the right files in their editor. When code changes, the user re-runs ingestion for that codebase to refresh the index.
 
 ---
 
@@ -120,7 +120,7 @@ A user runs the ingestion CLI to index a repository into a named codebase, then 
 
 **Phase 3: MCP Server Tools**
 - **Goal**: Provide a stable tool surface for assistants.
-- **Scope**: `list_codebases`, `search_codebases`, `get_codebase_stats`, `open_codebase_manager`, response formats with strong provenance and freshness signals.
+- **Scope**: `list_knowledgebases`, `search_knowledgebases`, `get_knowledgebase_stats`, `open_knowledgebase_manager`, response formats with strong provenance and freshness signals.
 - **Success signal**: An MCP client can call each tool and reliably reproduce search results that match the UI.
 
 **Phase 4: Fastify UI + API**

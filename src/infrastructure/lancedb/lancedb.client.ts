@@ -83,12 +83,12 @@ export class LanceDBClientWrapper {
   }
 
   /**
-   * Generate table name following the pattern: codebase_{name}_{schemaVersion}
+   * Generate table name following the pattern: knowledgebase_{name}_{schemaVersion}
    */
   public static getTableName(knowledgeBaseName: string): string {
     // Replace any characters that might not be valid in table names
     const sanitizedName = knowledgeBaseName.replace(/[^a-zA-Z0-9_-]/g, '_');
-    return `codebase_${sanitizedName}_${SCHEMA_VERSION.replace(/\./g, '_')}`;
+    return `knowledgebase_${sanitizedName}_${SCHEMA_VERSION.replace(/\./g, '_')}`;
   }
 
   /**
@@ -284,13 +284,13 @@ export class LanceDBClientWrapper {
 
       const tableNames = await this.connection!.tableNames();
       
-      // Filter to only codebase tables and extract metadata
+      // Filter to only knowledge base tables and extract metadata
       const collections: CollectionInfo[] = [];
       
       for (const tableName of tableNames) {
-        if (tableName.startsWith('codebase_')) {
+        if (tableName.startsWith('knowledgebase_')) {
           // Extract codebase name from table name
-          const match = tableName.match(/^codebase_(.+)_\d+_\d+_\d+$/);
+          const match = tableName.match(/^knowledgebase_(.+)_\d+_\d+_\d+$/);
           const codebaseName = match ? match[1].replace(/_/g, '-') : tableName;
           
           collections.push({

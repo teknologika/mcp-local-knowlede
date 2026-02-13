@@ -7,7 +7,7 @@ function setTheme(theme) {
         document.documentElement.classList.remove('carbon');
         document.body.classList.remove('carbon');
     }
-    localStorage.setItem('codebase-theme', theme);
+    localStorage.setItem('knowledgebase-theme', theme);
     
     // Update button states
     document.querySelectorAll('.theme-btn').forEach(btn => {
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Set theme on load
-    const savedTheme = localStorage.getItem('codebase-theme') || 'snow';
+    const savedTheme = localStorage.getItem('knowledgebase-theme') || 'snow';
     if (savedTheme === 'carbon') {
         document.querySelector('.theme-btn-carbon')?.classList.add('active');
         document.querySelector('.theme-btn-snow')?.classList.remove('active');
@@ -522,7 +522,7 @@ document.addEventListener('click', function() {
 
 // Confirm remove with better messaging
 function confirmRemove(codebaseName, displayName) {
-    if (confirm('Remove ' + displayName + '?\n\nThis will remove all indexed data for this codebase. This cannot be undone.')) {
+    if (confirm('Remove ' + displayName + '?\n\nThis will remove all indexed data for this knowledge base. This cannot be undone.')) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/delete';
@@ -547,7 +547,7 @@ function toggleSearchResult(element) {
 
 // Quit manager with confirmation
 function quitManager() {
-    if (confirm('Quit Codebase Manager?\n\nThis will shut down the manager server and close this tab.')) {
+    if (confirm('Quit Knowledge Base Manager?\n\nThis will shut down the manager server and close this tab.')) {
         // Call shutdown endpoint
         fetch('/api/shutdown', {
             method: 'POST',

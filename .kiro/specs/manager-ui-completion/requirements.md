@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This specification defines the requirements for completing the Manager UI for the Codebase Memory MCP Server. The Manager UI is a single-page web application that enables users to manage, search, and inspect their indexed codebases without requiring CLI tools. The UI must work reliably across all browsers, including Safari, which has specific constraints around localhost HTTP connections.
+This specification defines the requirements for completing the Manager UI for the Codebase Memory MCP Server. The Manager UI is a single-page web application that enables users to manage, search, and inspect their indexed knowledge bases without requiring CLI tools. The UI must work reliably across all browsers, including Safari, which has specific constraints around localhost HTTP connections.
 
 ## Glossary
 
@@ -13,7 +13,7 @@ This specification defines the requirements for completing the Manager UI for th
 - **Ingestion**: The process of scanning, parsing, and indexing a codebase directory
 - **Embedding**: A vector representation of code used for semantic search
 - **Embedded_Data**: All application data and functionality injected into the HTML page at render time
-- **Search_Service**: The TypeScript service that performs semantic search across indexed codebases
+- **Search_Service**: The TypeScript service that performs semantic search across indexed knowledge bases
 - **Codebase_Service**: The TypeScript service that manages codebase CRUD operations
 - **Client_Side_Bundle**: JavaScript bundle containing all service code that runs entirely in the browser
 
@@ -34,7 +34,7 @@ This specification defines the requirements for completing the Manager UI for th
 
 ### Requirement 2: Semantic Search Interface
 
-**User Story:** As a developer, I want to search across all my indexed codebases using natural language queries, so that I can quickly find relevant code snippets.
+**User Story:** As a developer, I want to search across all my indexed knowledge bases using natural language queries, so that I can quickly find relevant code snippets.
 
 #### Acceptance Criteria
 

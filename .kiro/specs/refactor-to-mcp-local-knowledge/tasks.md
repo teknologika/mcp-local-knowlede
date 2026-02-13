@@ -8,7 +8,7 @@
 - [x] 1.1.3 Update bin commands (mcp-local-knowledge, mcp-knowledge-ingest, mcp-knowledge-manager)
 - [x] 1.1.4 Update package.json keywords (remove code-specific, add document-specific)
 - [x] 1.1.5 Update repository URLs in package.json
-- [x] 1.1.6 Update .gitignore to use .knowledge-base/ instead of .codebase-memory/
+- [x] 1.1.6 Update .gitignore to use .knowledge-base/ instead of .knowledge-base/
 
 ### 1.2 Remove Code-Specific Domains
 - [x] 1.2.1 Delete src/domains/parsing/ directory
@@ -24,7 +24,7 @@
 - [x] 1.3.5 Update test files
 
 ### 1.4 Update Configuration System
-- [x] 1.4.1 Update src/shared/config/config.ts default paths from .codebase-memory to .knowledge-base
+- [x] 1.4.1 Update src/shared/config/config.ts default paths from .knowledge-base to .knowledge-base
 - [x] 1.4.2 Update configuration schema
 - [x] 1.4.3 Update validation messages
 - [x] 1.4.4 Update .env.example with new paths
@@ -144,10 +144,10 @@
 ## Phase 5: Update MCP Server
 
 ### 5.1 Update Tool Schemas
-- [x] 5.1.1 Rename list_codebases → list_knowledgebases in tool-schemas.ts
-- [x] 5.1.2 Rename search_codebases → search_knowledgebases
-- [x] 5.1.3 Rename get_codebase_stats → get_knowledgebase_stats
-- [x] 5.1.4 Rename open_codebase_manager → open_knowledgebase_manager
+- [x] 5.1.1 Rename list_knowledgebases → list_knowledgebases in tool-schemas.ts
+- [x] 5.1.2 Rename search_knowledgebases → search_knowledgebases
+- [x] 5.1.3 Rename get_knowledgebase_stats → get_knowledgebase_stats
+- [x] 5.1.4 Rename open_knowledgebase_manager → open_knowledgebase_manager
 - [x] 5.1.5 Replace codebaseName with knowledgebaseName in input schemas
 - [x] 5.1.6 Replace language filter with documentType filter
 - [x] 5.1.7 Update descriptions and examples

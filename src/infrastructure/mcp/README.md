@@ -13,9 +13,9 @@ The MCP tool schemas define the input validation rules and output formats for ea
 
 ## Available Tools
 
-### 1. `list_codebases`
+### 1. `list_knowledgebases`
 
-Lists all indexed codebases with their metadata.
+Lists all indexed knowledge bases with their metadata.
 
 **Input**: None
 
@@ -55,9 +55,9 @@ const output = {
 };
 ```
 
-### 2. `search_codebases`
+### 2. `search_knowledgebases`
 
-Performs semantic search across indexed codebases.
+Performs semantic search across indexed knowledge bases.
 
 **Input**:
 ```typescript
@@ -118,7 +118,7 @@ const output = {
 };
 ```
 
-### 3. `get_codebase_stats`
+### 3. `get_knowledgebase_stats`
 
 Retrieves detailed statistics for a specific codebase.
 
@@ -178,7 +178,7 @@ const output = {
 };
 ```
 
-### 4. `open_codebase_manager`
+### 4. `open_knowledgebase_manager`
 
 Opens the web-based codebase manager UI in the default browser.
 
@@ -268,8 +268,8 @@ if (validate(output)) {
 ### Specific Rules
 
 #### String Fields
-- `query` (search_codebases): Minimum length 1
-- `name` (get_codebase_stats): Minimum length 1
+- `query` (search_knowledgebases): Minimum length 1
+- `name` (get_knowledgebase_stats): Minimum length 1
 
 #### Numeric Fields
 - `chunkCount`, `fileCount`: Minimum 0

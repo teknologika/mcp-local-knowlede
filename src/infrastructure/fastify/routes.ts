@@ -83,7 +83,7 @@ function createErrorResponse(
  */
 export async function registerRoutes(
   fastify: FastifyInstance,
-  codebaseService: KnowledgeBaseService,
+  knowledgeBaseService: KnowledgeBaseService,
   searchService: SearchService
 ): Promise<void> {
   /**
@@ -149,15 +149,15 @@ export async function registerRoutes(
   });
 
   /**
-   * GET /api/codebases/:name/stats
+   * GET /api/knowledgebases/:name/stats
    * Get detailed statistics for a knowledge base
    */
   fastify.get<{ Params: { name: string } }>(
-    '/api/codebases/:name/stats',
+    '/api/knowledgebases/:name/stats',
     async (request: FastifyRequest<{ Params: { name: string } }>, reply: FastifyReply) => {
       try {
         const { name } = request.params;
-        logger.info('GET /api/codebases/:name/stats', { name });
+        logger.info('GET /api/knowledgebases/:name/stats', { name });
 
         if (!name || name.trim() === '') {
           reply.status(400);
@@ -167,7 +167,7 @@ export async function registerRoutes(
           );
         }
 
-        const stats = await codebaseService.getKnowledgeBaseStats(name);
+        const stats = await knowledgeBaseService.getKnowledgeBaseStats(name);
         return stats;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -194,15 +194,15 @@ export async function registerRoutes(
   );
 
   /**
-   * PUT /api/codebases/:name
+   * PUT /api/knowledgebases/:name
    * Rename a knowledge base
    */
   fastify.put<{ Params: { name: string } }>(
-    '/api/codebases/:name',
+    '/api/knowledgebases/:name',
     async (request: FastifyRequest<{ Params: { name: string } }>, reply: FastifyReply) => {
       try {
         const { name } = request.params;
-        logger.info('PUT /api/codebases/:name', { name, body: request.body });
+        logger.info('PUT /api/knowledgebases/:name', { name, body: request.body });
 
         if (!name || name.trim() === '') {
           reply.status(400);
@@ -224,7 +224,7 @@ export async function registerRoutes(
 
         const { newName } = request.body as { newName: string };
 
-        await codebaseService.renameKnowledgeBase(name, newName);
+        await knowledgeBaseService.renameKnowledgeBase(name, newName);
         
         return {
           success: true,
@@ -255,15 +255,15 @@ export async function registerRoutes(
   );
 
   /**
-   * DELETE /api/codebases/:name
+   * DELETE /api/knowledgebases/:name
    * Delete a knowledge base and all its chunks
    */
   fastify.delete<{ Params: { name: string } }>(
-    '/api/codebases/:name',
+    '/api/knowledgebases/:name',
     async (request: FastifyRequest<{ Params: { name: string } }>, reply: FastifyReply) => {
       try {
         const { name } = request.params;
-        logger.info('DELETE /api/codebases/:name', { name });
+        logger.info('DELETE /api/knowledgebases/:name', { name });
 
         if (!name || name.trim() === '') {
           reply.status(400);
@@ -273,7 +273,7 @@ export async function registerRoutes(
           );
         }
 
-        await codebaseService.deleteKnowledgeBase(name);
+        await knowledgeBaseService.deleteKnowledgeBase(name);
         
         return {
           success: true,
@@ -304,18 +304,18 @@ export async function registerRoutes(
   );
 
   /**
-   * DELETE /api/codebases/:name/chunk-sets/:timestamp
+   * DELETE /api/knowledgebases/:name/chunk-sets/:timestamp
    * Delete chunks from a specific ingestion timestamp
    */
   fastify.delete<{ Params: { name: string; timestamp: string } }>(
-    '/api/codebases/:name/chunk-sets/:timestamp',
+    '/api/knowledgebases/:name/chunk-sets/:timestamp',
     async (
       request: FastifyRequest<{ Params: { name: string; timestamp: string } }>,
       reply: FastifyReply
     ) => {
       try {
         const { name, timestamp } = request.params;
-        logger.info('DELETE /api/codebases/:name/chunk-sets/:timestamp', {
+        logger.info('DELETE /api/knowledgebases/:name/chunk-sets/:timestamp', {
           name,
           timestamp,
         });
@@ -336,7 +336,7 @@ export async function registerRoutes(
           );
         }
 
-        const chunksDeleted = await codebaseService.deleteChunkSet(name, timestamp);
+        const chunksDeleted = await knowledgeBaseService.deleteChunkSet(name, timestamp);
         
         return {
           success: true,

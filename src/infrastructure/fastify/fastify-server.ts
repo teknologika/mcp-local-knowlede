@@ -46,18 +46,18 @@ export class FastifyServerError extends Error {
 export class FastifyServer {
   private fastify: FastifyInstance;
   private config: Config;
-  private codebaseService: KnowledgeBaseService;
+  private knowledgeBaseService: KnowledgeBaseService;
   private searchService: SearchService;
   private ingestionService: IngestionService;
   private isRunning = false;
 
   constructor(
-    codebaseService: KnowledgeBaseService,
+    knowledgeBaseService: KnowledgeBaseService,
     searchService: SearchService,
     ingestionService: IngestionService,
     config: Config
   ) {
-    this.codebaseService = codebaseService;
+    this.knowledgeBaseService = knowledgeBaseService;
     this.searchService = searchService;
     this.ingestionService = ingestionService;
     this.config = config;
@@ -198,12 +198,12 @@ export class FastifyServer {
 
     // Register Manager UI routes (SSR)
     this.fastify.register(async (instance) => {
-      await registerManagerRoutes(instance, this.codebaseService, this.searchService, this.ingestionService, this.config);
+      await registerManagerRoutes(instance, this.knowledgeBaseService, this.searchService, this.ingestionService, this.config);
     });
 
     // Register API routes
     this.fastify.register(async (instance) => {
-      await registerRoutes(instance, this.codebaseService, this.searchService);
+      await registerRoutes(instance, this.knowledgeBaseService, this.searchService);
     });
 
     // Health check endpoint

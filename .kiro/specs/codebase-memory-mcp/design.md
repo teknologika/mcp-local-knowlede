@@ -75,7 +75,7 @@ graph TB
 ### Component Responsibilities
 
 **MCP Server (`mcp-server`)**
-- Exposes MCP tools: `list_codebases`, `search_codebases`, `get_codebase_stats`, `open_codebase_manager`
+- Exposes MCP tools: `list_knowledgebases`, `search_knowledgebases`, `get_knowledgebase_stats`, `open_knowledgebase_manager`
 - Validates tool inputs against schemas
 - Delegates to Codebase Service and Search Service
 - Returns MCP-compliant responses
@@ -125,7 +125,7 @@ graph TB
 
 ### MCP Server Tools
 
-#### Tool: `list_codebases`
+#### Tool: `list_knowledgebases`
 
 **Input Schema:**
 ```typescript
@@ -148,7 +148,7 @@ graph TB
 }
 ```
 
-#### Tool: `search_codebases`
+#### Tool: `search_knowledgebases`
 
 **Input Schema:**
 ```typescript
@@ -178,7 +178,7 @@ graph TB
 }
 ```
 
-#### Tool: `get_codebase_stats`
+#### Tool: `get_knowledgebase_stats`
 
 **Input Schema:**
 ```typescript
@@ -208,7 +208,7 @@ graph TB
 }
 ```
 
-#### Tool: `open_codebase_manager`
+#### Tool: `open_knowledgebase_manager`
 
 **Input Schema:**
 ```typescript
@@ -269,27 +269,27 @@ Ingestion completed in 45.2s
 
 ### HTTP API Endpoints
 
-**GET `/api/codebases`**
-- Returns list of all codebases
+**GET `/api/knowledgebases`**
+- Returns list of all knowledge bases
 - Response: `{ codebases: Codebase[] }`
 
 **POST `/api/search`**
 - Body: `{ query: string, codebaseName?: string, language?: string, maxResults?: number }`
 - Response: `{ results: SearchResult[], totalResults: number, queryTime: number }`
 
-**GET `/api/codebases/:name/stats`**
+**GET `/api/knowledgebases/:name/stats`**
 - Returns detailed statistics for a codebase
 - Response: `CodebaseStats`
 
-**PUT `/api/codebases/:name`**
+**PUT `/api/knowledgebases/:name`**
 - Body: `{ newName: string }`
 - Response: `{ success: boolean, message: string }`
 
-**DELETE `/api/codebases/:name`**
+**DELETE `/api/knowledgebases/:name`**
 - Deletes a codebase and all its chunks
 - Response: `{ success: boolean, message: string }`
 
-**DELETE `/api/codebases/:name/chunk-sets/:timestamp`**
+**DELETE `/api/knowledgebases/:name/chunk-sets/:timestamp`**
 - Deletes chunks from a specific ingestion
 - Response: `{ success: boolean, chunksDeleted: number }`
 
@@ -418,11 +418,11 @@ type Language = "csharp" | "java" | "javascript" | "typescript" | "python";
 ```typescript
 interface Config {
   chromadb: {
-    persistPath: string; // Default: ~/.codebase-memory/chromadb
+    persistPath: string; // Default: ~/.knowledge-base/chromadb
   };
   embedding: {
     modelName: string; // Default: "Xenova/all-MiniLM-L6-v2"
-    cachePath: string; // Default: ~/.codebase-memory/models
+    cachePath: string; // Default: ~/.knowledge-base/models
   };
   server: {
     port: number; // Default: 8008
@@ -519,7 +519,7 @@ After analyzing all acceptance criteria, several redundancies were identified:
 
 **Property 1: Codebase Retrieval Completeness**
 
-*For any* set of indexed codebases, calling `list_codebases` should return all codebases with complete metadata (name, path, chunk count, file count, last ingestion timestamp, languages).
+*For any* set of indexed knowledge bases, calling `list_knowledgebases` should return all knowledge bases with complete metadata (name, path, chunk count, file count, last ingestion timestamp, languages).
 
 **Validates: Requirements 1.1, 8.1**
 
@@ -543,7 +543,7 @@ After analyzing all acceptance criteria, several redundancies were identified:
 
 **Property 4: Statistics Accuracy**
 
-*For any* codebase, the statistics returned by `get_codebase_stats` should accurately reflect the actual counts of chunks, files, languages, and chunk types stored in ChromaDB.
+*For any* codebase, the statistics returned by `get_knowledgebase_stats` should accurately reflect the actual counts of chunks, files, languages, and chunk types stored in ChromaDB.
 
 **Validates: Requirements 1.3, 8.3**
 
@@ -1014,7 +1014,7 @@ src/
 5. Configuration with missing optional values uses defaults
 
 **Property Test Examples:**
-1. For any codebase, list_codebases includes it (Property 1)
+1. For any codebase, list_knowledgebases includes it (Property 1)
 2. For any search query, results are ranked by similarity (Property 2)
 3. For any chunk, storage round-trip preserves metadata (Property 9)
 4. For any file with supported extension, parsing extracts chunks (Property 6)
@@ -1125,11 +1125,11 @@ Test complete workflows:
 ```json
 {
   "chromadb": {
-    "persistPath": "~/.codebase-memory/chromadb"
+    "persistPath": "~/.knowledge-base/chromadb"
   },
   "embedding": {
     "modelName": "Xenova/all-MiniLM-L6-v2",
-    "cachePath": "~/.codebase-memory/models"
+    "cachePath": "~/.knowledge-base/models"
   },
   "server": {
     "port": 8008,
@@ -1180,7 +1180,7 @@ manager
       "command": "mcp-server",
       "args": [],
       "env": {
-        "CONFIG_PATH": "~/.codebase-memory/config.json"
+        "CONFIG_PATH": "~/.knowledge-base/config.json"
       }
     }
   }

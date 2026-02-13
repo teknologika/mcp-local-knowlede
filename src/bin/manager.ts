@@ -106,7 +106,7 @@ async function main() {
 
     // Initialize knowledge base service
     mainLogger.debug('Initializing knowledge base service');
-    const codebaseService = new KnowledgeBaseService(lanceClient, config);
+    const knowledgeBaseService = new KnowledgeBaseService(lanceClient, config);
 
     // Initialize search service
     mainLogger.debug('Initializing search service');
@@ -126,7 +126,7 @@ async function main() {
 
     // Create Fastify server
     const fastifyServer = new FastifyServer(
-      codebaseService,
+      knowledgeBaseService,
       searchService,
       ingestionService,
       config

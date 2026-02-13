@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codebase Memory Manager</title>
+  <title>Knowledge Base Manager</title>
   <style>
     * {
       margin: 0;
@@ -394,8 +394,8 @@
 <body>
   <header>
     <div class="container">
-      <h1>🔍 Codebase Memory Manager</h1>
-      <p>Manage your indexed codebases and view statistics</p>
+      <h1>🔍 Knowledge Base Manager</h1>
+      <p>Manage your indexed knowledge bases and view statistics</p>
     </div>
   </header>
 
@@ -403,9 +403,9 @@
     <div id="alert" class="alert"></div>
 
     <div class="main-content">
-      <!-- Codebases List -->
+      <!-- Knowledge Bases List -->
       <div class="card">
-        <h2>Codebases</h2>
+        <h2>Knowledge Bases</h2>
         <div id="codebasesContent">
           <div class="loading">
             <div class="spinner"></div>
@@ -422,7 +422,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
-            <p>Select a codebase to view details</p>
+            <p>Select a knowledge base to view details</p>
           </div>
         </div>
       </div>
@@ -433,12 +433,12 @@
   <div id="renameModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Rename Codebase</h3>
+        <h3>Rename Knowledge Base</h3>
       </div>
       <div class="modal-body">
         <div class="form-group">
           <label for="newName">New Name</label>
-          <input type="text" id="newName" placeholder="Enter new codebase name">
+          <input type="text" id="newName" placeholder="Enter new knowledge base name">
         </div>
       </div>
       <div class="modal-footer">
@@ -452,7 +452,7 @@
   <div id="deleteModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Delete Codebase</h3>
+        <h3>Delete Knowledge Base</h3>
       </div>
       <div class="modal-body">
         <p>Are you sure you want to delete <strong id="deleteCodebaseName"></strong>?</p>
@@ -500,15 +500,15 @@
       if (window.__INITIAL_DATA__ && window.__INITIAL_DATA__.codebases) {
         console.log('Using embedded initial data');
         codebases = window.__INITIAL_DATA__.codebases;
-        renderCodebases();
+        renderKnowledge Bases();
       } else {
         // Fallback to API fetch
-        await loadCodebases();
+        await loadKnowledge Bases();
       }
     }
 
     // Load all codebases
-    async function loadCodebases() {
+    async function loadKnowledge Bases() {
       try {
         console.log('Loading codebases from:', `${API_BASE}/codebases`);
         const response = await fetch(`${API_BASE}/codebases`);
@@ -519,23 +519,23 @@
         }
         
         const data = await response.json();
-        console.log('Codebases loaded:', data);
+        console.log('Knowledge Bases loaded:', data);
         codebases = data.codebases || [];
-        renderCodebases();
+        renderKnowledge Bases();
       } catch (error) {
         console.error('Failed to load codebases:', error);
         showError(`Failed to load codebases: ${error.message}`);
         document.getElementById('codebasesContent').innerHTML = `
           <div class="empty-state">
             <p>Failed to load codebases: ${error.message}</p>
-            <button class="btn-primary" onclick="loadCodebases()">Retry</button>
+            <button class="btn-primary" onclick="loadKnowledge Bases()">Retry</button>
           </div>
         `;
       }
     }
 
     // Render codebases table
-    function renderCodebases() {
+    function renderKnowledge Bases() {
       const content = document.getElementById('codebasesContent');
       
       if (codebases.length === 0) {
@@ -580,7 +580,7 @@
     // Select a codebase and load its details
     async function selectCodebase(name) {
       selectedCodebase = name;
-      renderCodebases();
+      renderKnowledge Bases();
       
       const detailsContent = document.getElementById('detailsContent');
       
@@ -762,7 +762,7 @@
         closeRenameModal();
         
         // Reload codebases and select the renamed one
-        await loadCodebases();
+        await loadKnowledge Bases();
         selectedCodebase = newName;
         await selectCodebase(newName);
       } catch (error) {
@@ -804,10 +804,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
-            <p>Select a codebase to view details</p>
+            <p>Select a knowledge base to view details</p>
           </div>
         `;
-        await loadCodebases();
+        await loadKnowledge Bases();
       } catch (error) {
         showError(`Failed to delete codebase: ${error.message}`);
       }
@@ -845,7 +845,7 @@
         
         // Reload codebase details
         await selectCodebase(codebaseName);
-        await loadCodebases();
+        await loadKnowledge Bases();
       } catch (error) {
         showError(`Failed to delete chunk set: ${error.message}`);
       }

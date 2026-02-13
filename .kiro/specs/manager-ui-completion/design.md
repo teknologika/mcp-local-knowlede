@@ -52,11 +52,11 @@ The critical architectural decision is to bypass the HTTP API layer for the Mana
 │  └───────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │         HTTP API Routes (for MCP/CLI)                  │  │
-│  │  • GET  /api/codebases                                 │  │
+│  │  • GET  /api/knowledgebases                                 │  │
 │  │  • POST /api/search                                    │  │
-│  │  • GET  /api/codebases/:name/stats                     │  │
-│  │  • PUT  /api/codebases/:name                           │  │
-│  │  • DELETE /api/codebases/:name                         │  │
+│  │  • GET  /api/knowledgebases/:name/stats                     │  │
+│  │  • PUT  /api/knowledgebases/:name                           │  │
+│  │  • DELETE /api/knowledgebases/:name                         │  │
 │  └───────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                             │
@@ -154,7 +154,7 @@ The critical architectural decision is to bypass the HTTP API layer for the Mana
         <!-- Page Header -->
         <div class="page-header">
             <h1 class="greeting">Codebase Memory Manager</h1>
-            <p class="greeting-sub">Manage your indexed codebases</p>
+            <p class="greeting-sub">Manage your indexed knowledge bases</p>
         </div>
 
         <!-- Alert Messages -->
@@ -210,7 +210,7 @@ The critical architectural decision is to bypass the HTTP API layer for the Mana
                 <form method="POST" action="/manager/search">
                     <div class="form-group">
                         <label class="form-label">Query</label>
-                        <input type="text" name="query" class="form-input" placeholder="Search across all codebases..." required>
+                        <input type="text" name="query" class="form-input" placeholder="Search across all knowledge bases..." required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Max Results</label>

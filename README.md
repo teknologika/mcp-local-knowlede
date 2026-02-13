@@ -405,7 +405,7 @@ This will:
 
 ## Configuration
 
-The system can be configured using a JSON configuration file. The default location is `~/.codebase-memory/config.json`.
+The system can be configured using a JSON configuration file. The default location is `~/.knowledge-base/config.json`.
 
 ### Configuration File Example
 

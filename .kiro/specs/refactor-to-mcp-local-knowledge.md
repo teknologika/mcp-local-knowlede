@@ -16,7 +16,7 @@ Transform the current code-focused MCP server into a general-purpose document kn
 **IMPORTANT**: A complete reference implementation is available in the `mongodb-rag-agent` codebase, which has been indexed and is searchable via the MCP codebase search tools.
 
 To explore the reference implementation, use these MCP tools:
-- `search_codebases` with `codebaseName: "mongodb-rag-agent"` to find specific implementations
+- `search_knowledgebases` with `codebaseName: "mongodb-rag-agent"` to find specific implementations
 - Key search queries to explore:
   - "docling document conversion PDF DOCX"
   - "HybridChunker intelligent document splitting"
@@ -303,15 +303,15 @@ Keep versions in sync or independent:
 ### MCP Tools
 | Old | New |
 |-----|-----|
-| `list_codebases` | `list_knowledgebases` |
-| `search_codebases` | `search_knowledgebases` |
-| `get_codebase_stats` | `get_knowledgebase_stats` |
-| `open_codebase_manager` | `open_knowledgebase_manager` |
+| `list_knowledgebases` | `list_knowledgebases` |
+| `search_knowledgebases` | `search_knowledgebases` |
+| `get_knowledgebase_stats` | `get_knowledgebase_stats` |
+| `open_knowledgebase_manager` | `open_knowledgebase_manager` |
 
 ### Directories & Files
 | Old | New |
 |-----|-----|
-| `.codebase-memory/` | `.knowledge-base/` |
+| `.knowledge-base/` | `.knowledge-base/` |
 | `codebase.service.ts` | `knowledgebase.service.ts` |
 | `codebase/` domain | `knowledgebase/` domain |
 
@@ -349,7 +349,7 @@ Keep versions in sync or independent:
   - Remove language support section
   - Add document format support section
 - [ ] Update `tsconfig.json` if needed
-- [ ] Update `.gitignore` (`.knowledge-base/` instead of `.codebase-memory/`)
+- [ ] Update `.gitignore` (`.knowledge-base/` instead of `.knowledge-base/`)
 
 #### 1.2 Remove Code-Specific Domains
 - [ ] Delete `src/domains/parsing/` (tree-sitter parsing)
@@ -375,7 +375,7 @@ Keep versions in sync or independent:
 
 #### 1.4 Update Configuration System
 - [ ] Update `src/shared/config/config.ts`:
-  - Change default paths from `.codebase-memory` to `.knowledge-base`
+  - Change default paths from `.knowledge-base` to `.knowledge-base`
   - Update configuration schema
   - Update validation messages
 - [ ] Update `.env.example` with new paths
@@ -897,10 +897,10 @@ npm install -g @teknologika/mcp-local-knowledge
 
 #### 5.1 Update Tool Schemas
 - [ ] Update `src/infrastructure/mcp/tool-schemas.ts`:
-  - Rename `list_codebases` → `list_knowledgebases`
-  - Rename `search_codebases` → `search_knowledgebases`
-  - Rename `get_codebase_stats` → `get_knowledgebase_stats`
-  - Rename `open_codebase_manager` → `open_knowledgebase_manager`
+  - Rename `list_knowledgebases` → `list_knowledgebases`
+  - Rename `search_knowledgebases` → `search_knowledgebases`
+  - Rename `get_knowledgebase_stats` → `get_knowledgebase_stats`
+  - Rename `open_knowledgebase_manager` → `open_knowledgebase_manager`
 - [ ] Update input schemas:
   - Replace `codebaseName` with `knowledgebaseName`
   - Replace `language` filter with `documentType` filter
@@ -1181,7 +1181,7 @@ Note: No fallback chunking - HybridChunker is the only chunking method
 ### For Users
 1. **Command names changed**: All commands renamed from `mcp-codebase-*` to `mcp-knowledge-*`
 2. **MCP tool names changed**: All tools renamed from `*_codebases` to `*_knowledgebases`
-3. **Data directory changed**: `.codebase-memory/` → `.knowledge-base/`
+3. **Data directory changed**: `.knowledge-base/` → `.knowledge-base/`
 4. **Configuration paths changed**: Update config files with new default paths
 5. **No more code parsing**: Tree-sitter removed, focus on documents only
 6. **New dependencies**: Python 3.9+ and Docling required
@@ -1197,7 +1197,7 @@ Note: No fallback chunking - HybridChunker is the only chunking method
 
 ### Step 1: Backup Data
 ```bash
-cp -r ~/.codebase-memory ~/.codebase-memory.backup
+cp -r ~/.knowledge-base ~/.knowledge-base.backup
 ```
 
 ### Step 2: Uninstall Old Version
@@ -1218,7 +1218,7 @@ pip install docling transformers torch
 ### Step 5: Migrate Data (Optional)
 ```bash
 # Move data to new location
-mv ~/.codebase-memory ~/.knowledge-base
+mv ~/.knowledge-base ~/.knowledge-base
 
 # Or re-ingest documents
 mcp-knowledge-ingest --path ./my-docs --name my-docs

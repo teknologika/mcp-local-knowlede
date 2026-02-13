@@ -33,7 +33,7 @@ describe('Integration Tests (Mocked)', () => {
 
   beforeAll(() => {
     // Create temporary directory for test files
-    testDir = join(tmpdir(), `codebase-memory-test-mocked-${Date.now()}`);
+    testDir = join(tmpdir(), `knowledge-base-test-mocked-${Date.now()}`);
     mkdirSync(testDir, { recursive: true });
 
     testConfig = {
@@ -272,10 +272,10 @@ describe('Integration Tests (Mocked)', () => {
 
       await registerRoutes(fastify, mockKnowledgeBaseService, mockSearchService);
 
-      // Test GET /api/codebases
+      // Test GET /api/knowledgebases
       const response = await fastify.inject({
         method: 'GET',
-        url: '/api/codebases',
+        url: '/api/knowledgebases',
       });
 
       expect(response.statusCode).toBe(200);

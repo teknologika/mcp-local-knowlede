@@ -25,10 +25,10 @@ Version 1.0 represents a major refactoring that transforms the package from a co
 
 | Old Tool | New Tool |
 |----------|----------|
-| `list_codebases` | `list_knowledgebases` |
-| `search_codebases` | `search_knowledgebases` |
-| `get_codebase_stats` | `get_knowledgebase_stats` |
-| `open_codebase_manager` | `open_knowledgebase_manager` |
+| `list_knowledgebases` | `list_knowledgebases` |
+| `search_knowledgebases` | `search_knowledgebases` |
+| `get_knowledgebase_stats` | `get_knowledgebase_stats` |
+| `open_knowledgebase_manager` | `open_knowledgebase_manager` |
 
 ### 4. Tool Parameters
 
@@ -43,7 +43,7 @@ Version 1.0 represents a major refactoring that transforms the package from a co
 
 ### 5. Data Directory
 
-**Old:** `~/.codebase-memory/`  
+**Old:** `~/.knowledge-base/`  
 **New:** `~/.knowledge-base/`
 
 **Subdirectories:**
@@ -53,7 +53,7 @@ Version 1.0 represents a major refactoring that transforms the package from a co
 
 ### 6. Configuration File
 
-**Old Location:** `~/.codebase-memory/config.json`  
+**Old Location:** `~/.knowledge-base/config.json`  
 **New Location:** `~/.knowledge-base/config.json`
 
 **New Configuration Options:**
@@ -119,13 +119,13 @@ Before migrating, back up your existing data:
 
 ```bash
 # Backup LanceDB data
-cp -r ~/.codebase-memory/lancedb ~/.codebase-memory/lancedb.backup
+cp -r ~/.knowledge-base/lancedb ~/.knowledge-base/lancedb.backup
 
 # Backup configuration
-cp ~/.codebase-memory/config.json ~/.codebase-memory/config.json.backup
+cp ~/.knowledge-base/config.json ~/.knowledge-base/config.json.backup
 
 # Backup embedding models (optional, can be re-downloaded)
-cp -r ~/.codebase-memory/models ~/.codebase-memory/models.backup
+cp -r ~/.knowledge-base/models ~/.knowledge-base/models.backup
 ```
 
 ### Step 2: Uninstall Old Package
@@ -210,7 +210,7 @@ If you have a custom configuration file:
 
 ```bash
 # Copy old config to new location
-cp ~/.codebase-memory/config.json ~/.knowledge-base/config.json
+cp ~/.knowledge-base/config.json ~/.knowledge-base/config.json
 
 # Edit the new config file
 nano ~/.knowledge-base/config.json
@@ -262,7 +262,7 @@ If you want to preserve existing data, you'll need to manually migrate LanceDB t
 
 ```bash
 # Copy LanceDB data to new location
-cp -r ~/.codebase-memory/lancedb ~/.knowledge-base/lancedb
+cp -r ~/.knowledge-base/lancedb ~/.knowledge-base/lancedb
 
 # Rename tables (requires custom script)
 # Old: codebase_my-project_1_0_0
@@ -344,7 +344,7 @@ npm install -g @teknologika/mcp-codebase-search@0.1.0
 
 ```bash
 # Restore old config
-cp ~/.codebase-memory/config.json.backup ~/.codebase-memory/config.json
+cp ~/.knowledge-base/config.json.backup ~/.knowledge-base/config.json
 
 # Restore old MCP client config
 # Edit your MCP client config file and change back to:
@@ -362,8 +362,8 @@ cp ~/.codebase-memory/config.json.backup ~/.codebase-memory/config.json
 
 ```bash
 # Restore LanceDB backup
-rm -rf ~/.codebase-memory/lancedb
-cp -r ~/.codebase-memory/lancedb.backup ~/.codebase-memory/lancedb
+rm -rf ~/.knowledge-base/lancedb
+cp -r ~/.knowledge-base/lancedb.backup ~/.knowledge-base/lancedb
 ```
 
 ### Step 5: Restart MCP Client
@@ -398,10 +398,10 @@ No. This is an all-or-nothing migration due to the package name change and schem
 
 ### Q: What happens to my embedding models?
 
-Embedding models are compatible between versions. You can copy them from `~/.codebase-memory/models/` to `~/.knowledge-base/models/` to avoid re-downloading.
+Embedding models are compatible between versions. You can copy them from `~/.knowledge-base/models/` to `~/.knowledge-base/models/` to avoid re-downloading.
 
 ```bash
-cp -r ~/.codebase-memory/models ~/.knowledge-base/models
+cp -r ~/.knowledge-base/models ~/.knowledge-base/models
 ```
 
 ### Q: How long does re-indexing take?
