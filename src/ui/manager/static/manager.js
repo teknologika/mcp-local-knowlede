@@ -658,6 +658,15 @@ function handleDrop(e) {
     
     const files = Array.from(e.dataTransfer.files);
     addFilesToQueue(files);
+    
+    // Auto-upload if knowledge base is selected
+    const knowledgeBase = document.getElementById('uploadKnowledgeBase');
+    if (knowledgeBase && knowledgeBase.value && files.length > 0) {
+        // Small delay to let the UI update
+        setTimeout(function() {
+            startUpload();
+        }, 100);
+    }
 }
 
 /**
@@ -912,6 +921,9 @@ async function uploadFile(file, knowledgeBase, index) {
         
         // Update progress to success
         updateUploadProgress(progressId, 'success', 'Complete');
+        
+        // Reload page after short delay to show updated KB stats
+        setTimeout(() => window.location.reload(), 1000);
         
         return { success: true, file: file.name };
         

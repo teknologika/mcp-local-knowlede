@@ -34,6 +34,38 @@ export class DocumentConverterService {
 
     logger.info('Starting document conversion', { filePath, documentType });
 
+    // For text-based formats (markdown, text, HTML), skip Docling and read directly
+    if (documentType === 'text' || documentType === 'markdown' || documentType === 'html') {
+      try {
+        const content = await readFile(filePath, 'utf-8');
+        const duration = Date.now() - startTime;
+        
+        logger.info('Document conversion completed (direct read)', { 
+          filePath, 
+          duration, 
+          wordCount: this.countWords(content) 
+        });
+        
+        return {
+          markdown: content,
+          metadata: {
+            title: fileName,
+            format: documentType,
+            wordCount: this.countWords(content),
+            hasImages: false,
+            hasTables: false,
+            conversionDuration: duration,
+          },
+        };
+      } catch (error) {
+        logger.error('Failed to read text file', error instanceof Error ? error : undefined, { filePath });
+        throw new Error(
+          `Failed to read document ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
+    }
+
+    // For binary formats (PDF, Office docs, audio), use Docling
     try {
       // Create timeout promise
       const timeoutPromise = new Promise<never>((_, reject) => {

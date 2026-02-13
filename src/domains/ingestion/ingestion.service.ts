@@ -78,7 +78,7 @@ export class IngestionService {
    * @returns Ingestion statistics
    */
   async ingestFiles(params: {
-    files: string[];
+    files: Array<string | { path: string; originalName: string }>;
     knowledgeBaseName: string;
     config: Config;
   }): Promise<{ filesProcessed: number; chunksCreated: number; errors: Array<{ filePath: string; error: string }> }> {
@@ -95,7 +95,10 @@ export class IngestionService {
     const ingestionTimestamp = new Date().toISOString();
 
     // Process each file
-    for (const filePath of files) {
+    for (const fileInput of files) {
+      const filePath = typeof fileInput === 'string' ? fileInput : fileInput.path;
+      const originalName = typeof fileInput === 'string' ? filePath.split('/').pop() || filePath : fileInput.originalName;
+      
       try {
         // Convert document to markdown
         const conversionResult = await this.documentConverter.convertDocument(filePath);
@@ -123,18 +126,17 @@ export class IngestionService {
         }
 
         // Determine document type from file extension
-        const ext = '.' + filePath.split('.').pop()?.toLowerCase();
+        const ext = '.' + originalName.split('.').pop()?.toLowerCase();
         const documentType = this.getDocumentType(ext);
 
         // Transform to Chunk format
         for (const docChunk of documentChunks) {
           allChunks.push({
             content: docChunk.content,
-            filePath: filePath.split('/').pop() || filePath, // Use filename only
+            filePath: originalName, // Use original filename without UUID prefix
             startLine: 0,
             endLine: 0,
             chunkType: docChunk.metadata.chunkType,
-            isTestFile: false,
             documentType,
             tokenCount: docChunk.tokenCount,
             headingPath: docChunk.metadata.headingPath,
@@ -148,10 +150,10 @@ export class IngestionService {
         this.logger.error(
           'Failed to process file',
           error instanceof Error ? error : new Error(errorMessage),
-          { filePath }
+          { filePath: originalName }
         );
         errors.push({
-          filePath,
+          filePath: originalName,
           error: errorMessage,
         });
       }
@@ -308,7 +310,6 @@ export class IngestionService {
                 startLine: 0,
                 endLine: 0,
                 chunkType: docChunk.metadata.chunkType,
-                isTestFile: file.isTest,
                 documentType: file.documentType,
                 tokenCount: docChunk.tokenCount,
                 headingPath: docChunk.metadata.headingPath,
@@ -566,9 +567,8 @@ export class IngestionService {
         chunkType: chunk.chunkType || 'paragraph',
         documentType: chunk.documentType || 'text',
         tokenCount: chunk.tokenCount || 0,
-        isTestFile: chunk.isTestFile || false,
         headingPath: chunk.headingPath || [],
-        pageNumber: chunk.pageNumber,
+        pageNumber: chunk.pageNumber ?? 0, // Default to 0 if undefined
         ingestionTimestamp,
         _knowledgeBaseName: codebaseName,
         _path: codebasePath,

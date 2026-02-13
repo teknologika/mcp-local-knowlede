@@ -117,11 +117,11 @@ export async function registerManagerRoutes(
   });
 
   /**
-   * GET /codebase/:name
+   * GET /knowledgebase/:name
    * View knowledge base details
    */
   fastify.get<{ Params: { name: string } }>(
-    '/codebase/:name',
+    '/knowledgebase/:name',
     async (request: FastifyRequest<{ Params: { name: string } }>, reply: FastifyReply) => {
       const { name } = request.params;
       
@@ -132,7 +132,7 @@ export async function registerManagerRoutes(
         return reply.view('index.hbs', {
           title: name,
           knowledgeBases,
-          selectedCodebase: name,
+          selectedKnowledgeBase: name,
           stats
         });
       } catch (error) {
@@ -561,8 +561,9 @@ export async function registerManagerRoutes(
       
       try {
         // Process the file through ingestion service
+        // Pass original filename separately to avoid UUID prefix in stored filePath
         await ingestionService.ingestFiles({
-          files: [tempFilePath],
+          files: [{ path: tempFilePath, originalName: filename }],
           knowledgeBaseName,
           config
         });

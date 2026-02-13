@@ -175,13 +175,14 @@ export class SearchService {
           // Add metadata filters if specified
           const filters: string[] = [];
           
+          // Always exclude placeholder records
+          filters.push(`content != '__PLACEHOLDER__'`);
+          
           if (params.documentType) {
             filters.push(`documentType = '${params.documentType}'`);
           }
           
-          if (params.excludeTests) {
-            filters.push(`isTestFile = false`);
-          }
+          // Note: excludeTests filter removed - not applicable for document knowledge bases
           
           // Apply combined filter
           if (filters.length > 0) {
@@ -215,7 +216,7 @@ export class SearchService {
                 documentType: row.documentType || 'text',
                 chunkType: row.chunkType || '',
                 chunkIndex: row.chunkIndex || 0,
-                isTest: row.isTestFile || false,
+                isTest: false, // Not applicable for document knowledge bases
                 pageNumber: row.pageNumber,
                 headingPath: row.headingPath,
               },
@@ -291,7 +292,7 @@ export class SearchService {
     // Search all knowledge bases
     const tables = await this.lanceClient.listTables();
     return tables
-      .filter(t => t.metadata?.knowledgeBaseName)
+      .filter(t => t.metadata?.knowledgeBaseName) // Now matches the metadata field
       .map(t => t.name);
   }
 

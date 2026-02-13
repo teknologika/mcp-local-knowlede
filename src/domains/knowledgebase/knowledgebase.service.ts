@@ -46,25 +46,23 @@ export class KnowledgeBaseService {
 
       const timestamp = new Date().toISOString();
       
-      // Create a placeholder chunk matching the schema used by storeChunks
+      // Create a placeholder chunk matching EXACTLY the schema used by storeChunks
       const placeholderChunk = {
         id: `${name}_placeholder_${timestamp}`,
-        vector: new Array(384).fill(0), // Empty embedding vector (384 dimensions for all-MiniLM-L6-v2)
-        content: '',
-        filePath: '',
+        vector: new Array(384).fill(0), // Empty embedding vector (384 dimensions)
+        content: '__PLACEHOLDER__', // Non-empty so we can filter it out
+        filePath: '__PLACEHOLDER__',
         startLine: 0,
         endLine: 0,
         chunkType: 'placeholder',
         documentType: 'placeholder',
         tokenCount: 0,
-        isTestFile: false,
-        headingPath: ['placeholder'], // Must have at least one element for LanceDB schema inference
+        headingPath: ['__PLACEHOLDER__'], // Must have at least one element
         pageNumber: 0,
         ingestionTimestamp: timestamp,
         _knowledgeBaseName: name,
         _path: '',
         _lastIngestion: timestamp,
-        _isPlaceholder: true,
       };
 
       // Create table with placeholder
@@ -123,23 +121,38 @@ export class KnowledgeBaseService {
             path = firstRow._path || '';
             lastIngestion = firstRow._lastIngestion || firstRow._createdAt || '';
             
-            // Get all rows to count chunks and files, excluding placeholders
-            const allRows = await lanceTable.query().select(['filePath', '_isPlaceholder']).toArray();
+            // Get all rows to count chunks and files
+            const allRows = await lanceTable.query().toArray();
             const uniqueFiles = new Set<string>();
             
+            logger.info('Counting chunks and files', { 
+              knowledgeBaseName, 
+              totalRows: allRows.length 
+            });
+            
             for (const row of allRows) {
-              // Skip placeholder records
-              if (row._isPlaceholder) continue;
-              
+              // Count all chunks (including placeholder - it's just 1 record)
               chunkCount++;
-              if (row.filePath) uniqueFiles.add(row.filePath);
+              if (row.filePath && row.filePath !== '__PLACEHOLDER__') {
+                uniqueFiles.add(row.filePath);
+              }
             }
             
             fileCount = uniqueFiles.size;
+            
+            logger.info('Chunk and file count complete', {
+              knowledgeBaseName,
+              chunkCount,
+              fileCount
+            });
           }
         } catch (error) {
-          // Silently ignore metadata errors - table may be corrupted or incompatible
-          // This is not critical for listing knowledge bases
+          // Log metadata errors but don't fail the entire listing
+          logger.warn('Failed to get metadata for knowledge base', {
+            knowledgeBaseName,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          // This is not critical for listing knowledge bases - continue with zeros
         }
 
         knowledgeBases.push({

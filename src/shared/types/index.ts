@@ -75,7 +75,6 @@ export interface Chunk {
   endLine: number;
   chunkType: ChunkType;
   filePath: string;
-  isTestFile?: boolean;
   documentType?: DocumentType;
   tokenCount?: number;
   headingPath?: string[];

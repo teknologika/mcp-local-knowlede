@@ -289,14 +289,14 @@ export class LanceDBClientWrapper {
       
       for (const tableName of tableNames) {
         if (tableName.startsWith('knowledgebase_')) {
-          // Extract codebase name from table name
+          // Extract knowledge base name from table name
           const match = tableName.match(/^knowledgebase_(.+)_\d+_\d+_\d+$/);
-          const codebaseName = match ? match[1].replace(/_/g, '-') : tableName;
+          const knowledgeBaseName = match ? match[1].replace(/_/g, '-') : tableName;
           
           collections.push({
             name: tableName,
             metadata: {
-              codebaseName,
+              knowledgeBaseName, // Use knowledgeBaseName for consistency
               schemaVersion: SCHEMA_VERSION,
             },
           });
