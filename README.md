@@ -1,4 +1,4 @@
-/.# @teknologika/mcp-local-knowledge
+# @teknologika/mcp-local-knowledge
 
 > A local-first semantic search system for documents using the Model Context Protocol (MCP)
 
