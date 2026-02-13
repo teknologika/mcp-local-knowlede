@@ -67,7 +67,8 @@ async function main() {
 
     // Initialize embedding service (lazy - will initialize on first use)
     const embeddingService = new HuggingFaceEmbeddingService(config, silentLogger);
-    // Don't initialize yet - let it initialize on first use to avoid blocking startup
+    // Initialize the embedding service to ensure it's ready for searches
+    await embeddingService.initialize();
 
     // Initialize knowledge base service
     const knowledgeBaseService = new KnowledgeBaseService(lanceClient, config);
