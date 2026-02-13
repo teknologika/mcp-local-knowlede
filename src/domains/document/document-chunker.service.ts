@@ -69,14 +69,22 @@ export class DocumentChunkerService {
       logger.info('Docling chunking completed successfully', { chunkCount: chunks.length });
       return chunks;
     } catch (error) {
-      logger.warn('Docling chunking failed, falling back to structure-aware chunking');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      logger.warn('Docling chunking failed, falling back to structure-aware chunking', {
+        error: errorMessage,
+        stack: errorStack,
+      });
       // Extract text from docling document for fallback
       const content = this.extractTextFromDocling(doclingDoc);
-      return this.structureAwareChunking(
+      logger.info('Extracted text from Docling document for fallback', { contentLength: content.length });
+      const fallbackChunks = await this.structureAwareChunking(
         content,
         options.chunkSize || 2000,
         options.chunkOverlap || 400
       );
+      logger.info('Fallback chunking completed', { chunkCount: fallbackChunks.length });
+      return fallbackChunks;
     }
   }
 

@@ -795,7 +795,16 @@ function clearFileList() {
  * Start file upload
  */
 async function startUpload() {
-    const knowledgeBase = document.getElementById('uploadKnowledgeBase').value;
+    const knowledgeBaseElement = document.getElementById('uploadKnowledgeBase');
+    
+    if (!knowledgeBaseElement) {
+        console.error('Upload knowledge base select element not found');
+        showUploadMessage('Error: Knowledge base selector not found', 'error');
+        return;
+    }
+    
+    const knowledgeBase = knowledgeBaseElement.value;
+    console.log('Selected knowledge base:', knowledgeBase);
     
     if (!knowledgeBase) {
         showUploadMessage('Please select a knowledge base', 'error');
@@ -901,10 +910,10 @@ async function uploadFile(file, knowledgeBase, index) {
     }
     
     try {
-        // Create form data
+        // Create form data - IMPORTANT: fields must come before files for @fastify/multipart
         const formData = new FormData();
-        formData.append('file', file);
         formData.append('knowledgeBaseName', knowledgeBase);
+        formData.append('file', file);
         
         // Upload file
         const response = await fetch('/api/upload/file', {

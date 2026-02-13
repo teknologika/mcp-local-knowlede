@@ -631,29 +631,53 @@ export async function registerManagerRoutes(
       try {
         // Process the file through ingestion service
         // Pass original filename separately to avoid UUID prefix in stored filePath
-        await ingestionService.ingestFiles({
+        logger.info('Starting file ingestion', { filename, tempFilePath, knowledgeBaseName });
+        
+        const result = await ingestionService.ingestFiles({
           files: [{ path: tempFilePath, originalName: filename }],
           knowledgeBaseName,
           config
         });
         
-        logger.info('File processed successfully', { filename, knowledgeBaseName });
+        logger.info('File processed successfully', { 
+          filename, 
+          knowledgeBaseName,
+          filesProcessed: result.filesProcessed,
+          chunksCreated: result.chunksCreated,
+          errors: result.errors
+        });
         
         // Clean up temp file
         await unlink(tempFilePath).catch(() => {
           logger.warn('Failed to delete temp file', { tempFilePath });
         });
         
+        // Check if there were errors during processing
+        if (result.errors.length > 0) {
+          logger.error('File processing had errors', new Error(result.errors[0].error), { errorDetails: result.errors });
+          return reply.status(500).send({
+            error: `Processing failed: ${result.errors[0].error}`,
+            details: result.errors
+          });
+        }
+        
         return reply.send({
           success: true,
           filename,
-          knowledgeBaseName
+          knowledgeBaseName,
+          chunksCreated: result.chunksCreated
         });
         
       } catch (error) {
         // Clean up temp file on error
         await unlink(tempFilePath).catch(() => {
           logger.warn('Failed to delete temp file after error', { tempFilePath });
+        });
+        
+        logger.error('File upload processing failed', error instanceof Error ? error : new Error(String(error)), {
+          filename,
+          tempFilePath,
+          knowledgeBaseName
         });
         
         throw error;

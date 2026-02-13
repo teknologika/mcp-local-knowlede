@@ -144,6 +144,8 @@ export class DocumentConverterService {
    */
   private async executeDoclingCLI(args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     return new Promise((resolve, reject) => {
+      logger.info('Spawning docling CLI', { command: 'docling', args });
+      
       const child = spawn('docling', args, {
         stdio: ['ignore', 'pipe', 'pipe'],
       });
@@ -154,9 +156,11 @@ export class DocumentConverterService {
 
       const timeout = setTimeout(() => {
         timedOut = true;
+        logger.warn('Docling CLI timeout, killing process', { timeout: this.conversionTimeout });
         child.kill('SIGTERM');
         setTimeout(() => {
           if (!child.killed) {
+            logger.warn('Docling CLI did not respond to SIGTERM, sending SIGKILL');
             child.kill('SIGKILL');
           }
         }, 1000);
@@ -164,23 +168,32 @@ export class DocumentConverterService {
       }, this.conversionTimeout);
 
       child.stdout?.on('data', (data) => {
-        stdout += data.toString();
+        const chunk = data.toString();
+        stdout += chunk;
+        logger.debug('Docling CLI stdout', { chunk: chunk.substring(0, 200) });
       });
 
       child.stderr?.on('data', (data) => {
-        stderr += data.toString();
+        const chunk = data.toString();
+        stderr += chunk;
+        logger.debug('Docling CLI stderr', { chunk: chunk.substring(0, 200) });
       });
 
       child.on('error', (error) => {
         clearTimeout(timeout);
         if (!timedOut) {
-          reject(new Error(`Failed to spawn docling CLI: ${error.message}`));
+          logger.error('Failed to spawn docling CLI', error, { command: 'docling', args });
+          reject(new Error(`Failed to spawn docling CLI: ${error.message}. Is docling installed? Try: pip install docling`));
         }
       });
 
       child.on('close', (code) => {
         clearTimeout(timeout);
         if (!timedOut) {
+          logger.info('Docling CLI process closed', { exitCode: code, stderrLength: stderr.length, stdoutLength: stdout.length });
+          if (stderr) {
+            logger.debug('Docling CLI stderr output', { stderr: stderr.substring(0, 500) });
+          }
           resolve({
             stdout,
             stderr,

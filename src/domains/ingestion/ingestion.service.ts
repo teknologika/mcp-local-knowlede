@@ -99,22 +99,24 @@ export class IngestionService {
       const filePath = typeof fileInput === 'string' ? fileInput : fileInput.path;
       const originalName = typeof fileInput === 'string' ? filePath.split('/').pop() || filePath : fileInput.originalName;
       
+      this.logger.info('Processing file', { filePath, originalName });
+      
       try {
         // Convert document to markdown
+        this.logger.info('Starting document conversion', { filePath });
         const conversionResult = await this.documentConverter.convertDocument(filePath);
+        this.logger.info('Document conversion completed', { 
+          filePath, 
+          markdownLength: conversionResult.markdown.length,
+          hasDoclingDocument: !!conversionResult.doclingDocument
+        });
 
         // Chunk the document
         let documentChunks;
-        if (conversionResult.doclingDocument) {
-          documentChunks = await this.documentChunker.chunkWithDocling(
-            conversionResult.doclingDocument,
-            {
-              maxTokens: this.config.document?.maxTokens || 512,
-              chunkSize: this.config.document?.chunkSize || 1000,
-              chunkOverlap: this.config.document?.chunkOverlap || 200,
-            }
-          );
-        } else {
+        if (conversionResult.doclingDocument && conversionResult.markdown) {
+          // We have both JSON structure and markdown from CLI mode
+          // Use markdown for chunking since CLI mode doesn't support SDK chunk() method
+          this.logger.info('Using markdown-based chunking (CLI mode)', { filePath });
           documentChunks = await this.documentChunker.chunkDocument(
             conversionResult.markdown,
             {
@@ -123,7 +125,24 @@ export class IngestionService {
               chunkOverlap: this.config.document?.chunkOverlap || 200,
             }
           );
+        } else if (conversionResult.markdown) {
+          this.logger.info('Using markdown-based chunking', { filePath });
+          documentChunks = await this.documentChunker.chunkDocument(
+            conversionResult.markdown,
+            {
+              maxTokens: this.config.document?.maxTokens || 512,
+              chunkSize: this.config.document?.chunkSize || 1000,
+              chunkOverlap: this.config.document?.chunkOverlap || 200,
+            }
+          );
+        } else {
+          throw new Error('No markdown content available for chunking');
         }
+        
+        this.logger.info('Document chunking completed', { 
+          filePath, 
+          chunkCount: documentChunks.length 
+        });
 
         // Determine document type from file extension
         const ext = '.' + originalName.split('.').pop()?.toLowerCase();
@@ -145,12 +164,17 @@ export class IngestionService {
         }
 
         processedFiles++;
+        this.logger.info('File processed successfully', { 
+          filePath: originalName, 
+          chunksCreated: documentChunks.length 
+        });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
         this.logger.error(
           'Failed to process file',
           error instanceof Error ? error : new Error(errorMessage),
-          { filePath: originalName }
+          { filePath: originalName, errorMessage, errorStack }
         );
         errors.push({
           filePath: originalName,
@@ -278,20 +302,11 @@ export class IngestionService {
             // Convert document to markdown
             const conversionResult = await this.documentConverter.convertDocument(file.path);
 
-            // Chunk the document
+            // Chunk the document - use markdown for CLI mode
             let documentChunks;
-            if (conversionResult.doclingDocument) {
-              // Use Docling document object for better chunking
-              documentChunks = await this.documentChunker.chunkWithDocling(
-                conversionResult.doclingDocument,
-                {
-                  maxTokens: this.config.document?.maxTokens || 512,
-                  chunkSize: this.config.document?.chunkSize || 1000,
-                  chunkOverlap: this.config.document?.chunkOverlap || 200,
-                }
-              );
-            } else {
-              // Fallback to markdown chunking
+            if (conversionResult.doclingDocument && conversionResult.markdown) {
+              // We have both JSON structure and markdown from CLI mode
+              // Use markdown for chunking since CLI mode doesn't support SDK chunk() method
               documentChunks = await this.documentChunker.chunkDocument(
                 conversionResult.markdown,
                 {
@@ -300,6 +315,17 @@ export class IngestionService {
                   chunkOverlap: this.config.document?.chunkOverlap || 200,
                 }
               );
+            } else if (conversionResult.markdown) {
+              documentChunks = await this.documentChunker.chunkDocument(
+                conversionResult.markdown,
+                {
+                  maxTokens: this.config.document?.maxTokens || 512,
+                  chunkSize: this.config.document?.chunkSize || 1000,
+                  chunkOverlap: this.config.document?.chunkOverlap || 200,
+                }
+              );
+            } else {
+              throw new Error('No markdown content available for chunking');
             }
 
             // Transform to Chunk format
