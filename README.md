@@ -544,6 +544,19 @@ CONFIG_PATH=./my-config.json mcp-local-knowledge
 }
 ```
 
+### Using Codex MCP CLI
+
+If you have [Codex](https://github.com/wong2/codex) installed, you can add the server with a single command:
+
+```bash
+codex mcp add local-knowledge \
+  --env CONFIG_PATH=~/.knowledge-base/config.json \
+  --env LOG_LEVEL=info \
+  -- mcp-local-knowledge
+```
+
+This automatically configures the MCP server in your client without manual JSON editing.
+
 ### Other MCP Clients
 
 For other MCP-compatible clients, use the stdio transport:
