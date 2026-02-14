@@ -293,61 +293,61 @@
 ## Phase 10: Testing & Quality Assurance
 
 ### 10.1 Unit Tests
-- [~] 10.1.1 Run all unit tests: npm test
-- [~] 10.1.2 Achieve 80%+ coverage
-- [~] 10.1.3 Fix any failing tests
-- [~] 10.1.4 Add missing tests
+- [ ] 10.1.1 Run all unit tests: npm test
+- [ ] 10.1.2 Achieve 80%+ coverage
+- [ ] 10.1.3 Fix any failing tests
+- [ ] 10.1.4 Add missing tests
 
 ### 10.2 Integration Tests
-- [~] 10.2.1 Test end-to-end document ingestion
-- [~] 10.2.2 Test search across different document types
-- [~] 10.2.3 Test MCP tool integration
-- [~] 10.2.4 Test Manager UI workflows
-- [~] 10.2.5 Test Python bridge reliability
+- [ ] 10.2.1 Test end-to-end document ingestion
+- [ ] 10.2.2 Test search across different document types
+- [ ] 10.2.3 Test MCP tool integration
+- [ ] 10.2.4 Test Manager UI workflows
+- [ ] 10.2.5 Test Python bridge reliability
 
 ### 10.3 Manual Testing
-- [~] 10.3.1 Test PDF file ingestion
-- [~] 10.3.2 Test DOCX file ingestion
-- [~] 10.3.3 Test PPTX file ingestion
-- [~] 10.3.4 Test XLSX file ingestion
-- [~] 10.3.5 Test HTML file ingestion
-- [~] 10.3.6 Test Markdown file ingestion
-- [~] 10.3.7 Test text file ingestion
-- [~] 10.3.8 Test audio file ingestion (MP3, WAV)
-- [~] 10.3.9 Test search functionality
-- [~] 10.3.10 Test Manager UI search tab
-- [~] 10.3.11 Test Manager UI manage tab
-- [~] 10.3.12 Test Manager UI ingest tab with drag-and-drop
-- [~] 10.3.13 Test file upload
-- [~] 10.3.14 Test folder upload
-- [~] 10.3.15 Test MCP tools in Claude Desktop
-- [~] 10.3.16 Test error scenarios
-- [~] 10.3.17 Test performance with large documents
+- [ ] 10.3.1 Test PDF file ingestion
+- [ ] 10.3.2 Test DOCX file ingestion
+- [ ] 10.3.3 Test PPTX file ingestion
+- [ ] 10.3.4 Test XLSX file ingestion
+- [ ] 10.3.5 Test HTML file ingestion
+- [ ] 10.3.6 Test Markdown file ingestion
+- [ ] 10.3.7 Test text file ingestion
+- [ ] 10.3.8 Test audio file ingestion (MP3, WAV)
+- [ ] 10.3.9 Test search functionality
+- [ ] 10.3.10 Test Manager UI search tab
+- [ ] 10.3.11 Test Manager UI manage tab
+- [ ] 10.3.12 Test Manager UI ingest tab with drag-and-drop
+- [ ] 10.3.13 Test file upload
+- [ ] 10.3.14 Test folder upload
+- [ ] 10.3.15 Test MCP tools in Claude Desktop
+- [ ] 10.3.16 Test error scenarios
+- [ ] 10.3.17 Test performance with large documents
 
 ### 10.4 Performance Testing
-- [~] 10.4.1 Benchmark document conversion speed
-- [~] 10.4.2 Benchmark search performance
-- [~] 10.4.3 Test with large knowledge bases (1000+ documents)
-- [~] 10.4.4 Test memory usage
-- [~] 10.4.5 Optimize bottlenecks
+- [ ] 10.4.1 Benchmark document conversion speed
+- [ ] 10.4.2 Benchmark search performance
+- [ ] 10.4.3 Test with large knowledge bases (1000+ documents)
+- [ ] 10.4.4 Test memory usage
+- [ ] 10.4.5 Optimize bottlenecks
 
 ## Phase 11: Deployment Preparation
 
 ### 11.1 Version Update
-- [~] 11.1.1 Update version in package.json to 1.0.0
-- [~] 11.1.2 Update CHANGELOG.md with breaking changes
-- [~] 11.1.3 Tag release in git
+- [ ] 11.1.1 Update version in package.json to 1.0.0
+- [ ] 11.1.2 Update CHANGELOG.md with breaking changes
+- [ ] 11.1.3 Tag release in git
 
 ### 11.2 Build & Package
-- [~] 11.2.1 Run npm run clean
-- [~] 11.2.2 Run npm run build
-- [~] 11.2.3 Test built package locally
-- [~] 11.2.4 Run npm pack and test installation
+- [ ] 11.2.1 Run npm run clean
+- [ ] 11.2.2 Run npm run build
+- [ ] 11.2.3 Test built package locally
+- [ ] 11.2.4 Run npm pack and test installation
 
 ### 11.3 Pre-publish Checklist
-- [~] 11.4.1 Verify all tests passing
-- [~] 11.4.2 Verify documentation complete
-- [~] 11.4.3 Verify migration guide ready
-- [~] 11.4.4 Verify Python dependencies documented
-- [~] 11.4.5 Verify examples tested
-- [~] 11.4.6 Run security audit: npm audit
+- [ ] 11.4.1 Verify all tests passing
+- [ ] 11.4.2 Verify documentation complete
+- [ ] 11.4.3 Verify migration guide ready
+- [ ] 11.4.4 Verify Python dependencies documented
+- [ ] 11.4.5 Verify examples tested
+- [ ] 11.4.6 Run security audit: npm audit

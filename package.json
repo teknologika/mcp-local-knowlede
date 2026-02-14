@@ -1,6 +1,6 @@
 {
   "name": "@teknologika/mcp-local-knowledge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local-first semantic search for documents using MCP protocol. Requires Python 3.10+ and Docling (pip install docling).",
   "type": "module",
   "engines": {
@@ -12,9 +12,16 @@
     "mcp-knowledge-ingest": "dist/bin/ingest.js",
     "mcp-knowledge-manager": "dist/bin/manager.js"
   },
+  "files": [
+    "dist",
+    "scripts/check-docling.js",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc && npm run copy-ui",
+    "build": "tsc && npm run copy-ui && npm run chmod-bins",
     "copy-ui": "mkdir -p dist/ui/manager/templates dist/ui/manager/static && cp src/ui/manager/templates/*.hbs dist/ui/manager/templates/ && cp src/ui/manager/static/* dist/ui/manager/static/",
+    "chmod-bins": "chmod +x dist/bin/*.js",
     "dev": "node --watch --env-file=.env src/bin/manager.ts",
     "dev:mcp": "node --watch src/bin/mcp-server.ts",
     "dev:ingest": "node --watch src/bin/ingest.ts",
